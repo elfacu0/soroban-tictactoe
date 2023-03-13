@@ -16,6 +16,9 @@ fn test_initialize() {
     let player_b = Address::random(&env);
 
     client.initialize(&player_a, &player_b);
+
+    assert_eq!(client.player_a(),player_a);
+    assert_eq!(client.player_b(),player_b);
 }
 
 #[test]
