@@ -1,19 +1,33 @@
 #![cfg(test)]
 
-use super::{IncrementContract, IncrementContractClient};
-use soroban_sdk::{testutils::Logger, Env};
+use super::{GameContract, GameContractClient};
+use soroban_sdk::{testutils::Address as _, testutils::Logger, Env, Address};
 
 extern crate std;
 
+
 #[test]
-fn test() {
+fn test_initialize() {
     let env = Env::default();
-    let contract_id = env.register_contract(None, IncrementContract);
-    let client = IncrementContractClient::new(&env, &contract_id);
+    let contract_id = env.register_contract(None, GameContract);
+    let client = GameContractClient::new(&env, &contract_id);
 
-    assert_eq!(client.increment(), 1);
-    assert_eq!(client.increment(), 2);
-    assert_eq!(client.increment(), 3);
+    let player_a = Address::random(&env);
+    let player_b = Address::random(&env);
 
-    std::println!("{}", env.logger().all().join("\n"));
+    client.initialize(&player_a, &player_b);
+}
+
+#[test]
+#[should_panic]
+fn test_already_initialized() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, GameContract);
+    let client = GameContractClient::new(&env, &contract_id);
+
+    let player_a = Address::random(&env);
+    let player_b = Address::random(&env);
+
+    client.initialize(&player_a, &player_b);
+    client.initialize(&player_a, &player_b);
 }

@@ -1,31 +1,29 @@
 #![no_std]
-use soroban_sdk::{contractimpl, log, Env, Symbol};
+use soroban_sdk::{contractimpl, log, Env, Symbol, Address, contracttype};
 
-const COUNTER: Symbol = Symbol::short("COUNTER");
+#[contracttype]
+pub enum Players {
+    A,
+    B,
+}
 
-pub struct IncrementContract;
+pub struct GameContract;
 
 #[contractimpl]
-impl IncrementContract {
-    /// Increment increments an internal counter, and returns the value.
-    pub fn increment(env: Env) -> u32 {
-        // Get the current count.
-        let mut count: u32 = env
-            .storage()
-            .get(&COUNTER)
-            .unwrap_or(Ok(0)) // If no value set, assume 0.
-            .unwrap(); // Panic if the value of COUNTER is not u32.
-        log!(&env, "count: {}", count);
-
-        // Increment the count.
-        count += 1;
-
-        // Save the count.
-        env.storage().set(&COUNTER, &count);
-
-        // Return the count to the caller.
-        count
+impl GameContract {
+    pub fn initialize(env: Env, player_a: Address, player_b: Address) {
+        assert!(!has_players(&env), "already initialized");
+        set_players(&env, &player_a, &player_b);
     }
+}
+
+fn has_players(env: &Env) -> bool{
+    env.storage().has(&Players::A) && env.storage().has(&Players::B)
+}   
+
+fn set_players(env: &Env, player_a: &Address, player_b: &Address) {
+    env.storage().set(&Players::A, player_a);
+    env.storage().set(&Players::B, player_b);
 }
 
 mod test;
