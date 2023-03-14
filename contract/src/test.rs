@@ -92,3 +92,23 @@ fn test_mark_used_cell() {
     client.play(&pos_x, &pos_y);
     client.play(&pos_x, &pos_y);
 }
+
+#[test]
+fn test_winner() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, GameContract);
+    let client = GameContractClient::new(&env, &contract_id);
+
+    let player_a = Address::random(&env);
+    let player_b = Address::random(&env);
+
+    client.initialize(&player_a, &player_b);
+
+    client.play(&0, &0); //player_a
+    client.play(&0, &1); //player_b
+    client.play(&1, &0); //player_a
+    client.play(&1, &1); 
+    client.play(&2, &0); //player_a
+
+    assert_eq!(client.winner(),player_a);
+}
