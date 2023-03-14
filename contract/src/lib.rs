@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contractimpl, contracttype, log, Address, Env};
+use soroban_sdk::{contractimpl, contracttype, Address, Env};
 
 #[contracttype]
 pub enum DataKey {
@@ -8,7 +8,7 @@ pub enum DataKey {
     PlayerTurn,
     Grid,
     Winner,
-    Time
+    Time,
 }
 
 pub struct GameContract;
@@ -120,12 +120,12 @@ fn mark_cell(env: &Env, pos_x: u32, pos_y: u32) {
     set_grid(env, grid);
 }
 
-fn get_time(env: &Env) -> u32{
+fn get_time(env: &Env) -> u32 {
     env.storage().get(&DataKey::Time).unwrap_or(Ok(0)).unwrap()
 }
 
-fn increase_time(env: &Env){
-    env.storage().set(&DataKey::Time, &(get_time(env)+1))
+fn increase_time(env: &Env) {
+    env.storage().set(&DataKey::Time, &(get_time(env) + 1))
 }
 
 fn has_ended(env: &Env) -> bool {
