@@ -94,7 +94,7 @@ fn test_mark_used_cell() {
 }
 
 #[test]
-fn test_winner() {
+fn test_winner_a() {
     let env = Env::default();
     let contract_id = env.register_contract(None, GameContract);
     let client = GameContractClient::new(&env, &contract_id);
@@ -111,4 +111,72 @@ fn test_winner() {
     client.play(&2, &0); //player_a
 
     assert_eq!(client.winner(),player_a);
+}
+
+#[test]
+fn test_winner_b() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, GameContract);
+    let client = GameContractClient::new(&env, &contract_id);
+
+    let player_a = Address::random(&env);
+    let player_b = Address::random(&env);
+
+    client.initialize(&player_a, &player_b);
+
+    client.play(&2, &0); //player_a
+    client.play(&0, &0); //player_b
+    client.play(&1, &0); 
+    client.play(&0, &1); 
+    client.play(&1, &1);
+    client.play(&0, &2); 
+
+    assert_eq!(client.winner(),player_b);
+}
+
+#[test]
+#[should_panic]
+fn test_game_over() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, GameContract);
+    let client = GameContractClient::new(&env, &contract_id);
+
+    let player_a = Address::random(&env);
+    let player_b = Address::random(&env);
+
+    client.initialize(&player_a, &player_b);
+
+    client.play(&0, &0); //player_a
+    client.play(&0, &1); //player_b
+    client.play(&1, &0); //player_a
+    client.play(&1, &1); 
+    client.play(&2, &0); //player_a  already won
+    client.play(&1, &2); 
+}
+
+#[test]
+#[should_panic]
+fn test_draw() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, GameContract);
+    let client = GameContractClient::new(&env, &contract_id);
+
+    let player_a = Address::random(&env);
+    let player_b = Address::random(&env);
+
+    client.initialize(&player_a, &player_b);
+
+    client.play(&0, &0);
+    client.play(&1, &0);
+    client.play(&2, &0);
+
+    client.play(&2, &1);
+    client.play(&0, &1);
+    client.play(&1, &1);
+    
+    client.play(&1, &2);
+    client.play(&0, &2);
+    client.play(&2, &2);
+
+    client.winner();
 }

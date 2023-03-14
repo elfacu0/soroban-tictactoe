@@ -8,6 +8,7 @@ pub enum DataKey {
     PlayerTurn,
     Grid,
     Winner,
+    Time
 }
 
 pub struct GameContract;
@@ -21,15 +22,16 @@ impl GameContract {
 
     pub fn play(env: Env, pos_x: u32, pos_y: u32) {
         assert!(has_players(&env), "Game is not initialized");
+        assert!(!has_ended(&env), "Game has ended");
         assert!(pos_x <= 2, "X position out of range");
         assert!(pos_y <= 2, "Y position out of range");
         assert!(is_empty_cell(&env, pos_x, pos_y), "Cell is already used");
-        assert!(!has_winner(&env), "Game has ended");
 
         mark_cell(&env, pos_x, pos_y);
         check_winner(&env);
 
         change_turn(&env);
+        increase_time(&env);
     }
 
     pub fn player_turn(env: Env) -> Address {
@@ -118,8 +120,16 @@ fn mark_cell(env: &Env, pos_x: u32, pos_y: u32) {
     set_grid(env, grid);
 }
 
-fn has_winner(env: &Env) -> bool {
-    env.storage().has(&DataKey::Winner)
+fn get_time(env: &Env) -> u32{
+    env.storage().get(&DataKey::Time).unwrap_or(Ok(0)).unwrap()
+}
+
+fn increase_time(env: &Env){
+    env.storage().set(&DataKey::Time, &(get_time(env)+1))
+}
+
+fn has_ended(env: &Env) -> bool {
+    env.storage().has(&DataKey::Winner) || get_time(env) >= 9
 }
 
 fn get_winner(env: &Env) -> Address {
