@@ -1,19 +1,13 @@
-[package]
-name = "tictactoe"
-version = "0.1.0"
-edition = "2022"
+[workspace]
+resolver = "2"
 
-[lib]
-crate-type = ["cdylib"]
+members = [   
+    "contract",
+]
 
-[features]
-testutils = ["soroban-sdk/testutils"]
-
-[dependencies]
-soroban-sdk = "0.6.0"
-
-[dev_dependencies]
-soroban-sdk = { version = "0.6.0", features = ["testutils"] }
+[profile.release-with-logs]
+inherits = "release"
+debug-assertions = true
 
 [profile.release]
 opt-level = "z"
@@ -25,6 +19,12 @@ panic = "abort"
 codegen-units = 1
 lto = true
 
-[profile.release-with-logs]
-inherits = "release"
-debug-assertions = true
+[workspace.dependencies.soroban-sdk]
+version = "0.6.0"
+git = "https://github.com/stellar/rs-soroban-sdk"
+rev = "754c43bd87fe3fd69773ab5e3dc9cbe5a4852c37"
+
+[workspace.dependencies.soroban-auth]
+version = "0.6.0"
+git = "https://github.com/stellar/rs-soroban-sdk"
+rev = "754c43bd87fe3fd69773ab5e3dc9cbe5a4852c37"
