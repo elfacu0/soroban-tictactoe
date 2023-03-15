@@ -15,7 +15,7 @@ pub struct GameContract;
 
 #[contractimpl]
 impl GameContract {
-    pub fn initialize(env: Env, player_a: Address, player_b: Address) {
+    pub fn init(env: Env, player_a: Address, player_b: Address) {
         assert!(!has_players(&env), "Already initialized");
         set_players(&env, &player_a, &player_b);
     }

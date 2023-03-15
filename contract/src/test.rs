@@ -1,9 +1,7 @@
 #![cfg(test)]
 
 use super::{GameContract, GameContractClient};
-use soroban_sdk::{testutils::Address as _, testutils::Logger, Address, Env};
-
-extern crate std;
+use soroban_sdk::{testutils::Address as _, Address, Env};
 
 #[test]
 fn test_initialize() {
@@ -14,7 +12,7 @@ fn test_initialize() {
     let player_a = Address::random(&env);
     let player_b = Address::random(&env);
 
-    client.initialize(&player_a, &player_b);
+    client.init(&player_a, &player_b);
 
     assert_eq!(client.player_a(), player_a);
     assert_eq!(client.player_b(), player_b);
@@ -32,8 +30,8 @@ fn test_already_initialized() {
     let player_a = Address::random(&env);
     let player_b = Address::random(&env);
 
-    client.initialize(&player_a, &player_b);
-    client.initialize(&player_a, &player_b);
+    client.init(&player_a, &player_b);
+    client.init(&player_a, &player_b);
 }
 
 #[test]
@@ -45,7 +43,7 @@ fn test_change_turn() {
     let player_a = Address::random(&env);
     let player_b = Address::random(&env);
 
-    client.initialize(&player_a, &player_b);
+    client.init(&player_a, &player_b);
 
     let pos_x: u32 = 2;
     let pos_y: u32 = 2;
@@ -68,7 +66,7 @@ fn test_other_player() {
     let player_b = Address::random(&env);
     let player_c = Address::random(&env);
 
-    client.initialize(&player_a, &player_b);
+    client.init(&player_a, &player_b);
 
     let pos_x: u32 = 2;
     let pos_y: u32 = 2;
@@ -87,7 +85,7 @@ fn test_twice_play() {
     let player_a = Address::random(&env);
     let player_b = Address::random(&env);
 
-    client.initialize(&player_a, &player_b);
+    client.init(&player_a, &player_b);
 
     let pos_x: u32 = 2;
     let pos_y: u32 = 2;
@@ -105,7 +103,7 @@ fn test_mark_empty_cell() {
     let player_a = Address::random(&env);
     let player_b = Address::random(&env);
 
-    client.initialize(&player_a, &player_b);
+    client.init(&player_a, &player_b);
 
     let pos_x: u32 = 2;
     let pos_y: u32 = 2;
@@ -123,7 +121,7 @@ fn test_mark_used_cell() {
     let player_a = Address::random(&env);
     let player_b = Address::random(&env);
 
-    client.initialize(&player_a, &player_b);
+    client.init(&player_a, &player_b);
 
     let pos_x: u32 = 2;
     let pos_y: u32 = 2;
@@ -141,7 +139,7 @@ fn test_winner_a() {
     let player_a = Address::random(&env);
     let player_b = Address::random(&env);
 
-    client.initialize(&player_a, &player_b);
+    client.init(&player_a, &player_b);
 
     client.play(&player_a, &0, &0); //player_a
     client.play(&player_b, &0, &1); //player_b
@@ -161,7 +159,7 @@ fn test_winner_b() {
     let player_a = Address::random(&env);
     let player_b = Address::random(&env);
 
-    client.initialize(&player_a, &player_b);
+    client.init(&player_a, &player_b);
 
     client.play(&player_a, &2, &0); //player_a
     client.play(&player_b, &0, &0); //player_b
@@ -183,7 +181,7 @@ fn test_game_over() {
     let player_a = Address::random(&env);
     let player_b = Address::random(&env);
 
-    client.initialize(&player_a, &player_b);
+    client.init(&player_a, &player_b);
 
     client.play(&player_a, &0, &0); //player_a
     client.play(&player_b, &0, &1); //player_b
@@ -203,7 +201,7 @@ fn test_draw() {
     let player_a = Address::random(&env);
     let player_b = Address::random(&env);
 
-    client.initialize(&player_a, &player_b);
+    client.init(&player_a, &player_b);
 
     client.play(&player_a, &0, &0);
     client.play(&player_b, &1, &0);
