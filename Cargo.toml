@@ -3,6 +3,7 @@ resolver = "2"
 
 members = [   
     "contract",
+    "deployer"
 ]
 
 [profile.release-with-logs]
