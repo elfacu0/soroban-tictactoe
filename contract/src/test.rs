@@ -50,10 +50,10 @@ fn test_play() {
     let pos_x: u32 = 2;
     let pos_y: u32 = 2;
 
-    client.play(&pos_x, &pos_y);
+    client.play(&player_a, &pos_x, &pos_y);
     assert_eq!(client.player_turn(), player_b);
-    
-    client.play(&(pos_x-1), &(pos_y-1));
+
+    client.play(&player_b, &(pos_x - 1), &(pos_y - 1));
     assert_eq!(client.player_turn(), player_a);
 }
 
@@ -71,7 +71,7 @@ fn test_mark_empty_cell() {
     let pos_x: u32 = 2;
     let pos_y: u32 = 2;
 
-    client.play(&pos_x, &pos_y);
+    client.play(&player_a, &pos_x, &pos_y);
 }
 
 #[test]
@@ -89,8 +89,8 @@ fn test_mark_used_cell() {
     let pos_x: u32 = 2;
     let pos_y: u32 = 2;
 
-    client.play(&pos_x, &pos_y);
-    client.play(&pos_x, &pos_y);
+    client.play(&player_a, &pos_x, &pos_y);
+    client.play(&player_b, &pos_x, &pos_y);
 }
 
 #[test]
@@ -104,13 +104,13 @@ fn test_winner_a() {
 
     client.initialize(&player_a, &player_b);
 
-    client.play(&0, &0); //player_a
-    client.play(&0, &1); //player_b
-    client.play(&1, &0); //player_a
-    client.play(&1, &1); 
-    client.play(&2, &0); //player_a
+    client.play(&player_a, &0, &0); //player_a
+    client.play(&player_b, &0, &1); //player_b
+    client.play(&player_a, &1, &0); //player_a
+    client.play(&player_b, &1, &1);
+    client.play(&player_a, &2, &0); //player_a
 
-    assert_eq!(client.winner(),player_a);
+    assert_eq!(client.winner(), player_a);
 }
 
 #[test]
@@ -124,14 +124,14 @@ fn test_winner_b() {
 
     client.initialize(&player_a, &player_b);
 
-    client.play(&2, &0); //player_a
-    client.play(&0, &0); //player_b
-    client.play(&1, &0); 
-    client.play(&0, &1); 
-    client.play(&1, &1);
-    client.play(&0, &2); 
+    client.play(&player_a, &2, &0); //player_a
+    client.play(&player_b, &0, &0); //player_b
+    client.play(&player_a, &1, &0);
+    client.play(&player_b, &0, &1);
+    client.play(&player_a, &1, &1);
+    client.play(&player_b, &0, &2);
 
-    assert_eq!(client.winner(),player_b);
+    assert_eq!(client.winner(), player_b);
 }
 
 #[test]
@@ -146,12 +146,12 @@ fn test_game_over() {
 
     client.initialize(&player_a, &player_b);
 
-    client.play(&0, &0); //player_a
-    client.play(&0, &1); //player_b
-    client.play(&1, &0); //player_a
-    client.play(&1, &1); 
-    client.play(&2, &0); //player_a  already won
-    client.play(&1, &2); 
+    client.play(&player_a, &0, &0); //player_a
+    client.play(&player_b, &0, &1); //player_b
+    client.play(&player_a, &1, &0); //player_a
+    client.play(&player_b, &1, &1);
+    client.play(&player_a, &2, &0); //player_a  already won
+    client.play(&player_b, &1, &2);
 }
 
 #[test]
@@ -166,17 +166,17 @@ fn test_draw() {
 
     client.initialize(&player_a, &player_b);
 
-    client.play(&0, &0);
-    client.play(&1, &0);
-    client.play(&2, &0);
+    client.play(&player_a, &0, &0);
+    client.play(&player_b, &1, &0);
+    client.play(&player_a, &2, &0);
 
-    client.play(&2, &1);
-    client.play(&0, &1);
-    client.play(&1, &1);
-    
-    client.play(&1, &2);
-    client.play(&0, &2);
-    client.play(&2, &2);
+    client.play(&player_b, &2, &1);
+    client.play(&player_a, &0, &1);
+    client.play(&player_b, &1, &1);
+
+    client.play(&player_a, &1, &2);
+    client.play(&player_b, &0, &2);
+    client.play(&player_a, &2, &2);
 
     client.winner();
 }

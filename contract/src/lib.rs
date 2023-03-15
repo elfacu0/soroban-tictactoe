@@ -20,8 +20,9 @@ impl GameContract {
         set_players(&env, &player_a, &player_b);
     }
 
-    pub fn play(env: Env, pos_x: u32, pos_y: u32) {
+    pub fn play(env: Env, player: Address, pos_x: u32, pos_y: u32) {
         assert!(has_players(&env), "Game is not initialized");
+        assert!(allowed_player(&env, player), "It's not your turn");
         assert!(!has_ended(&env), "Game has ended");
         assert!(pos_x <= 2, "X position out of range");
         assert!(pos_y <= 2, "Y position out of range");
@@ -165,6 +166,11 @@ fn check_winner(env: &Env) {
     {
         set_winner(env, get_player_b(env));
     }
+}
+
+fn allowed_player(env: &Env, player: Address) -> bool {
+    player.require_auth();
+    get_player_turn(env) == player
 }
 
 mod test;
