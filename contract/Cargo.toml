@@ -1,5 +1,5 @@
 [package]
-name = "soroban-tictactoe-game"
+name = "tictactoe-game"
 version = "0.0.0"
 authors = ["K"]
 edition = "2021"
