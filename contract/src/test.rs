@@ -37,7 +37,7 @@ fn test_already_initialized() {
 }
 
 #[test]
-fn test_play() {
+fn test_change_turn() {
     let env = Env::default();
     let contract_id = env.register_contract(None, GameContract);
     let client = GameContractClient::new(&env, &contract_id);
@@ -55,6 +55,28 @@ fn test_play() {
 
     client.play(&player_b, &(pos_x - 1), &(pos_y - 1));
     assert_eq!(client.player_turn(), player_a);
+}
+
+#[test]
+#[should_panic]
+fn test_other_player() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, GameContract);
+    let client = GameContractClient::new(&env, &contract_id);
+
+    let player_a = Address::random(&env);
+    let player_b = Address::random(&env);
+    let player_c = Address::random(&env);
+
+    client.initialize(&player_a, &player_b);
+
+    let pos_x: u32 = 2;
+    let pos_y: u32 = 2;
+
+    client.play(&player_a, &pos_x, &pos_y);
+    assert_eq!(client.player_turn(), player_b);
+
+    client.play(&player_c, &(pos_x - 1), &(pos_y - 1));
 }
 
 #[test]
