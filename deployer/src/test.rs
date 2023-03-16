@@ -11,7 +11,7 @@ mod contract {
 }
 
 #[test]
-fn test() {
+fn test_deploy() {
     let env = Env::default();
     let client = DeployerClient::new(&env, &env.register_contract(None, Deployer));
 
@@ -27,4 +27,22 @@ fn test() {
     let client = contract::Client::new(&env, &contract_id);
     assert_eq!(client.player_a(), player_a);
     assert_eq!(client.player_b(), player_b);
+}
+
+#[test]
+fn test_get_game() {
+    let env = Env::default();
+    let client = DeployerClient::new(&env, &env.register_contract(None, Deployer));
+
+    let wasm_hash = env.install_contract_wasm(contract::WASM);
+
+    let salt = Bytes::from_array(&env, &[0; 32]);
+    let player_a = Address::random(&env);
+    let player_b = Address::random(&env);
+    let init_fn_args = (player_a.clone(), player_b.clone()).into_val(&env);
+    let (contract_id, _) = client.deploy(&salt, &wasm_hash, &init_fn_args);
+    
+    let game = crate::Game { player_a, player_b, ended: false };
+
+    assert_eq!(client.game(&contract_id), game);
 }
