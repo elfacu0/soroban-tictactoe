@@ -48,7 +48,12 @@ impl GameContract {
     }
 
     pub fn winner(env: Env) -> Address {
+        assert!(has_ended(&env), "Game is still being played");
         get_winner(&env)
+    }
+
+    pub fn ended(env: Env) -> bool {
+        has_ended(&env)
     }
 }
 

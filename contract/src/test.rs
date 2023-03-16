@@ -131,6 +131,21 @@ fn test_mark_used_cell() {
 }
 
 #[test]
+#[should_panic]
+fn test_no_winner() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, GameContract);
+    let client = GameContractClient::new(&env, &contract_id);
+
+    let player_a = Address::random(&env);
+    let player_b = Address::random(&env);
+
+    client.init(&player_a, &player_b);
+
+    client.winner();
+}
+
+#[test]
 fn test_winner_a() {
     let env = Env::default();
     let contract_id = env.register_contract(None, GameContract);
