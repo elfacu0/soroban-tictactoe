@@ -141,11 +141,11 @@ fn test_winner_a() {
 
     client.init(&player_a, &player_b);
 
-    client.play(&player_a, &0, &0); //player_a
-    client.play(&player_b, &0, &1); //player_b
-    client.play(&player_a, &1, &0); //player_a
+    client.play(&player_a, &0, &0);
+    client.play(&player_b, &0, &1);
+    client.play(&player_a, &1, &0);
     client.play(&player_b, &1, &1);
-    client.play(&player_a, &2, &0); //player_a
+    client.play(&player_a, &2, &0);
 
     assert_eq!(client.winner(), player_a);
 }
@@ -161,8 +161,8 @@ fn test_winner_b() {
 
     client.init(&player_a, &player_b);
 
-    client.play(&player_a, &2, &0); //player_a
-    client.play(&player_b, &0, &0); //player_b
+    client.play(&player_a, &2, &0);
+    client.play(&player_b, &0, &0);
     client.play(&player_a, &1, &0);
     client.play(&player_b, &0, &1);
     client.play(&player_a, &1, &1);
@@ -183,9 +183,9 @@ fn test_game_over() {
 
     client.init(&player_a, &player_b);
 
-    client.play(&player_a, &0, &0); //player_a
-    client.play(&player_b, &0, &1); //player_b
-    client.play(&player_a, &1, &0); //player_a
+    client.play(&player_a, &0, &0);
+    client.play(&player_b, &0, &1);
+    client.play(&player_a, &1, &0);
     client.play(&player_b, &1, &1);
     client.play(&player_a, &2, &0); //player_a  already won
     client.play(&player_b, &1, &2);
