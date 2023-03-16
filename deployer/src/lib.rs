@@ -1,6 +1,14 @@
 #![no_std]
 
-use soroban_sdk::{contractimpl, contracttype, Address, Bytes, BytesN, Env, RawVal, Symbol, Vec, IntoVal};
+use soroban_sdk::{
+    contractimpl, contracttype, Address, Bytes, BytesN, Env, IntoVal, RawVal, Symbol, Vec,
+};
+
+mod game_contract {
+    soroban_sdk::contractimport!(
+        file = "../target/wasm32-unknown-unknown/release/tictactoe_game.wasm"
+    );
+}
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -31,13 +39,20 @@ impl Deployer {
             .deploy(&wasm_hash);
         let init_fn = Symbol::short("init");
         let res: RawVal = env.invoke_contract(&id, &init_fn, init_args.clone());
-        set_game(&env, &id, &init_args);
+        let game = create_game(&env, &init_args);
+        set_game(&env, &id, game);
         (id, res)
     }
 
     pub fn game(env: Env, id: BytesN<32>) -> Game {
         assert!(has_game(&env, &id), "Game doesn't exist");
-        get_game(&env, id)
+        let mut game = get_game(&env, &id);
+        if !game.ended {
+            let client = game_contract::Client::new(&env, &id);
+            game.ended = client.ended();
+            set_game(&env, &id, game.clone());
+        }
+        game
     }
 }
 
@@ -46,13 +61,12 @@ fn has_game(env: &Env, id: &BytesN<32>) -> bool {
     env.storage().has(&key)
 }
 
-fn get_game(env: &Env, id: BytesN<32>) -> Game {
+fn get_game(env: &Env, id: &BytesN<32>) -> Game {
     let key = DataKey::Games(id.clone());
     env.storage().get(&key).unwrap().unwrap()
 }
 
-fn set_game(env: &Env, id: &BytesN<32>, init_args: &Vec<RawVal>) {
-    let key = DataKey::Games(id.clone());
+fn create_game(env: &Env, init_args: &Vec<RawVal>) -> Game {
     let player_a = init_args.get(0).unwrap().unwrap().into_val(env);
     let player_b = init_args.get(1).unwrap().unwrap().into_val(env);
     let game = Game {
@@ -60,6 +74,11 @@ fn set_game(env: &Env, id: &BytesN<32>, init_args: &Vec<RawVal>) {
         player_b,
         ended: false,
     };
+    game
+}
+
+fn set_game(env: &Env, id: &BytesN<32>, game: Game) {
+    let key = DataKey::Games(id.clone());
     env.storage().set(&key, &game)
 }
 

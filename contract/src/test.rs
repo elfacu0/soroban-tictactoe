@@ -198,11 +198,15 @@ fn test_game_over() {
 
     client.init(&player_a, &player_b);
 
+    assert_eq!(client.ended(),false);
+
     client.play(&player_a, &0, &0);
     client.play(&player_b, &0, &1);
     client.play(&player_a, &1, &0);
     client.play(&player_b, &1, &1);
+    assert_eq!(client.ended(),false);
     client.play(&player_a, &2, &0); //player_a  already won
+    assert_eq!(client.ended(),true);
     client.play(&player_b, &1, &2);
 }
 
