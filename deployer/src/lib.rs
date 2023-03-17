@@ -1,7 +1,7 @@
 #![no_std]
 
 use soroban_sdk::{
-    contractimpl, contracttype, Address, Bytes, BytesN, Env, IntoVal, RawVal, Symbol, Vec,
+    contractimpl, contracttype, symbol, Address, Bytes, BytesN, Env, IntoVal, RawVal, Vec,
 };
 
 mod game_contract {
@@ -37,7 +37,7 @@ impl Deployer {
             .deployer()
             .with_current_contract(&salt)
             .deploy(&wasm_hash);
-        let init_fn = Symbol::short("init");
+        let init_fn = symbol!("init");
         let res: RawVal = env.invoke_contract(&id, &init_fn, init_args.clone());
         let game = create_game(&env, &init_args);
         set_game(&env, &id, game);

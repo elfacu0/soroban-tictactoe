@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contractimpl, contracttype, vec, Address, Env, Symbol, Vec};
+use soroban_sdk::{contractimpl, contracttype, symbol, vec, Address, Env, Symbol, Vec};
 
 #[contracttype]
 pub enum DataKey {
@@ -35,7 +35,7 @@ impl GameContract {
         increase_time(&env);
     }
 
-    pub fn player_turn(env: Env) -> Address {
+    pub fn turn(env: Env) -> Address {
         get_player_turn(&env)
     }
 
@@ -57,9 +57,9 @@ impl GameContract {
     }
 
     pub fn grid(env: Env) -> Vec<Symbol> {
-        let empty = Symbol::short("");
-        let x = Symbol::short("X");
-        let o = Symbol::short("O");
+        let empty = symbol!("");
+        let x = symbol!("X");
+        let o = symbol!("O");
         let mut res = vec![&env];
         let mut pointer = 0b110000000000000000;
         let curr_grid = get_grid(&env);

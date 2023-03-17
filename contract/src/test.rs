@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use super::{GameContract, GameContractClient};
-use soroban_sdk::{testutils::Address as _, vec, Address, Env, Symbol};
+use soroban_sdk::{symbol, testutils::Address as _, vec, Address, Env};
 
 #[test]
 fn test_initialize() {
@@ -17,7 +17,7 @@ fn test_initialize() {
     assert_eq!(client.player_a(), player_a);
     assert_eq!(client.player_b(), player_b);
 
-    assert_eq!(client.player_turn(), player_a);
+    assert_eq!(client.turn(), player_a);
 }
 
 #[test]
@@ -49,10 +49,10 @@ fn test_change_turn() {
     let pos_y: u32 = 2;
 
     client.play(&player_a, &pos_x, &pos_y);
-    assert_eq!(client.player_turn(), player_b);
+    assert_eq!(client.turn(), player_b);
 
     client.play(&player_b, &(pos_x - 1), &(pos_y - 1));
-    assert_eq!(client.player_turn(), player_a);
+    assert_eq!(client.turn(), player_a);
 }
 
 #[test]
@@ -246,9 +246,9 @@ fn test_grid() {
     let player_a = Address::random(&env);
     let player_b = Address::random(&env);
 
-    let empty = Symbol::short("");
-    let x = Symbol::short("X");
-    let o = Symbol::short("O");
+    let empty = symbol!("");
+    let x = symbol!("X");
+    let o = symbol!("O");
     let mut grid = vec![
         &env,
         empty.clone(),
