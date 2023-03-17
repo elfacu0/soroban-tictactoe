@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use super::{GameContract, GameContractClient};
-use soroban_sdk::{testutils::Address as _, Address, Env};
+use soroban_sdk::{testutils::Address as _, vec, Address, Env, Symbol};
 
 #[test]
 fn test_initialize() {
@@ -198,15 +198,15 @@ fn test_game_over() {
 
     client.init(&player_a, &player_b);
 
-    assert_eq!(client.ended(),false);
+    assert_eq!(client.ended(), false);
 
     client.play(&player_a, &0, &0);
     client.play(&player_b, &0, &1);
     client.play(&player_a, &1, &0);
     client.play(&player_b, &1, &1);
-    assert_eq!(client.ended(),false);
+    assert_eq!(client.ended(), false);
     client.play(&player_a, &2, &0); //player_a  already won
-    assert_eq!(client.ended(),true);
+    assert_eq!(client.ended(), true);
     client.play(&player_b, &1, &2);
 }
 
@@ -235,4 +235,49 @@ fn test_draw() {
     client.play(&player_a, &2, &2);
 
     client.winner();
+}
+
+#[test]
+fn test_grid() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, GameContract);
+    let client = GameContractClient::new(&env, &contract_id);
+
+    let player_a = Address::random(&env);
+    let player_b = Address::random(&env);
+
+    let empty = Symbol::short("");
+    let x = Symbol::short("X");
+    let o = Symbol::short("O");
+    let mut grid = vec![
+        &env,
+        empty.clone(),
+        empty.clone(),
+        empty.clone(),
+        empty.clone(),
+        empty.clone(),
+        empty.clone(),
+        empty.clone(),
+        empty.clone(),
+        empty.clone(),
+    ];
+
+    client.init(&player_a, &player_b);
+    assert_eq!(client.grid(), grid);
+
+    client.play(&player_a, &2, &2);
+    grid.set(0, x.clone());
+    assert_eq!(client.grid(), grid);
+
+    client.play(&player_b, &0, &2);
+    grid.set(2, o.clone());
+    assert_eq!(client.grid(), grid);
+
+    client.play(&player_a, &1, &1);
+    grid.set(4, x.clone());
+    assert_eq!(client.grid(), grid);
+
+    client.play(&player_b, &1, &0);
+    grid.set(7, o.clone());
+    assert_eq!(client.grid(), grid);
 }

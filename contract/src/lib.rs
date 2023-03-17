@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contractimpl, contracttype, Address, Env};
+use soroban_sdk::{contractimpl, contracttype, vec, Address, Env, Symbol, Vec};
 
 #[contracttype]
 pub enum DataKey {
@@ -55,6 +55,26 @@ impl GameContract {
     pub fn ended(env: Env) -> bool {
         has_ended(&env)
     }
+
+    pub fn grid(env: Env) -> Vec<Symbol> {
+        let empty = Symbol::short("");
+        let x = Symbol::short("X");
+        let o = Symbol::short("O");
+        let mut res = vec![&env];
+        let mut pointer = 0b110000000000000000;
+        let curr_grid = get_grid(&env);
+        let mut offset = 16;
+        for _ in 0..9 {
+            match (curr_grid & pointer) >> offset {
+                1 => res.push_back(x.clone()),
+                2 => res.push_back(o.clone()),
+                _ => res.push_back(empty.clone()),
+            }
+            pointer >>= 2;
+            offset -= 2;
+        }
+        res
+    }
 }
 
 fn has_players(env: &Env) -> bool {
@@ -100,6 +120,9 @@ fn set_grid(env: &Env, grid: u32) {
 
 // 00 00 00 00 00 00 00 || 00 00 00 00 00 00 00 00 00 => x-y
 // xx xx xx xx xx xx xx || 22 12 02 21 11 10 20 10 00
+// | 2-2 | 2-1 | 2-0 |
+// | 1-2 | 1-1 | 1-0 |
+// | 0-2 | 0-1 | 0-0 |
 fn get_cell_pos(pos_x: u32, pos_y: u32) -> (u32, u32) {
     let offset = (pos_y * 3 + pos_x) << 1;
     let mask = 0b11 << offset;
