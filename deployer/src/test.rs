@@ -21,8 +21,7 @@ fn test_deploy() {
     let player_a = Address::random(&env);
     let player_b = Address::random(&env);
     let init_fn_args = (player_a.clone(), player_b.clone()).into_val(&env);
-    let (contract_id, init_result) = client.deploy(&salt, &wasm_hash, &init_fn_args);
-    assert!(init_result.is_void());
+    let contract_id = client.deploy(&salt, &wasm_hash, &init_fn_args);
 
     let client = contract::Client::new(&env, &contract_id);
     assert_eq!(client.player_a(), player_a);
@@ -40,7 +39,7 @@ fn test_get_game() {
     let player_a = Address::random(&env);
     let player_b = Address::random(&env);
     let init_fn_args = (player_a.clone(), player_b.clone()).into_val(&env);
-    let (contract_id, _) = client.deploy(&salt, &wasm_hash, &init_fn_args);
+    let contract_id = client.deploy(&salt, &wasm_hash, &init_fn_args);
     
     let game = crate::Game { player_a, player_b, ended: false };
 
@@ -59,7 +58,7 @@ fn test_set_ended() {
     let player_a = Address::random(&env);
     let player_b = Address::random(&env);
     let init_fn_args = (player_a.clone(), player_b.clone()).into_val(&env);
-    let (contract_id, _) = client.deploy(&salt, &wasm_hash, &init_fn_args);
+    let contract_id = client.deploy(&salt, &wasm_hash, &init_fn_args);
     
     let mut game = crate::Game { player_a: player_a.clone(), player_b: player_b.clone(), ended: false };
 

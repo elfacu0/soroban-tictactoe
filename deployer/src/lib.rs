@@ -32,16 +32,16 @@ impl Deployer {
         salt: Bytes,
         wasm_hash: BytesN<32>,
         init_args: Vec<RawVal>,
-    ) -> (BytesN<32>, RawVal) {
+    ) -> BytesN<32> {
         let id = env
             .deployer()
             .with_current_contract(&salt)
             .deploy(&wasm_hash);
         let init_fn = symbol!("init");
-        let res: RawVal = env.invoke_contract(&id, &init_fn, init_args.clone());
+        let _: RawVal = env.invoke_contract(&id, &init_fn, init_args.clone());
         let game = create_game(&env, &init_args);
         set_game(&env, &id, game);
-        (id, res)
+        id
     }
 
     pub fn game(env: Env, id: BytesN<32>) -> Game {
