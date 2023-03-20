@@ -16,7 +16,11 @@ This contract manage the game status, to make a move you need to call the `play`
 It checks for winning conditions and a tie, and ends the game when either condition is met
 <br />
 
-___
+---
+
+<br />
+
+# Functions
 
 ## Game Functions
 ### Init
@@ -77,9 +81,11 @@ Arguments:
 
 <br/>
 
-___
+---
 
-## Development
+<br />
+
+# Local Development
 Before deploying the new game instances, the WASM code needs to be installed on-chain.
 
 The install command will print out the hash derived from the WASM file
@@ -87,7 +93,7 @@ The install command will print out the hash derived from the WASM file
 soroban contract install --wasm target/wasm32-unknown-unknown/release/tictactoe_game.wasm
 ```
 
-Then you can run
+Then you can deploy the manager with
 
 ```
 soroban contract invoke \
@@ -97,15 +103,73 @@ soroban contract invoke \
     -- \
     --salt 0000000000000000000000000000000000000000000000000000000000000000 \
     --wasm_hash 48a67a58d5d3d777a228aa99c4560fc2f3ebf6e0e56a39709a711b12929d5d51 \
-    --init_args '[{"object":{"address":{"account": {"public_key_type_ed25519": "A" }}}}]' //TODO: fix this
+    --init_args '[{"object":{"address":{"account":{"public_key_type_ed25519":"5b26bf4596c86e7dc0fa64d7784fb287058801fc548fc5d0c9a44be08c083de8"}}}}, {"object":{"address":{"account":{"public_key_type_ed25519":"6e368450016cac667ec57347d70c25a83f399d6803442d031545b89457936c42"}}}}]'
+```
+
+Inside `init_args` the first element is player_a and the second player_b, public_key_type_ed25519 must contain the address in hex
+
+It will return the Address of the Game, use it to play the game
+
+```
+soroban contract invoke \
+    --account GBXDNBCQAFWKYZT6YVZUPVYMEWUD6OM5NABUILIDCVC3RFCXSNWEEQEZ \
+    --id 33d2785d1d0ca4d30bd0f6dc26d3a990b4f4d27bcbb44f429c49c8435a760bdc \
+    --fn play \
+    -- \
+    --player GBXDNBCQAFWKYZT6YVZUPVYMEWUD6OM5NABUILIDCVC3RFCXSNWEEQEZ \
+    --pos_x 0 \
+    --pos_y 1 
 ```
 
 <br/>
 
-___
+---
 
-## Game Deployment Example
-### Deploy Game Contract
+<br />
+
+# Deployment
+
+## Manager Deployment Example
+Deploy the manger contract
+```
+soroban contract deploy \
+    --wasm target/wasm32-unknown-unknown/release/tictactoe_manager.wasm \
+    --secret-key SDO2A45YT56K2V5B5W3PWQSFPGVHA4VKWY7MMXCBKOYPZJDADLCQC56D \
+    --rpc-url https://horizon-futurenet.stellar.cash:443/soroban/rpc \
+    --network-passphrase 'Test SDF Future Network ; October 2022'
+```
+
+### Install WASM Game file
+```
+soroban contract install \
+    --wasm target/wasm32-unknown-unknown/release/tictactoe_game.wasm \
+    --secret-key SDO2A45YT56K2V5B5W3PWQSFPGVHA4VKWY7MMXCBKOYPZJDADLCQC56D \
+    --rpc-url https://horizon-futurenet.stellar.cash:443/soroban/rpc \
+    --network-passphrase 'Test SDF Future Network ; October 2022'
+```
+
+### Deploy new instances of the game
+id: Manager Contract ID
+wasm_hash: hash returned from the installation of the game
+```
+soroban contract invoke \
+    --id 8d94a6e95049ed77625e176883e71d272e4948e5e2ea9ed438e0755af3246578 \
+    --secret-key SDO2A45YT56K2V5B5W3PWQSFPGVHA4VKWY7MMXCBKOYPZJDADLCQC56D \
+    --rpc-url https://horizon-futurenet.stellar.cash:443/soroban/rpc \
+    --network-passphrase 'Test SDF Future Network ; October 2022' \
+    --fn deploy \
+    -- \
+    --salt 0000000000000000000000000000000000000000000000000000000000000000 \
+    --wasm_hash 31690bfa9ca85e6e0b5c3d48fd3fd9cf5ab0df56d714dfb3b222be4e0b221011 \
+    --init_args '[{"object":{"address":{"account":{"public_key_type_ed25519":"5b26bf4596c86e7dc0fa64d7784fb287058801fc548fc5d0c9a44be08c083de8"}}}}, {"object":{"address":{"account":{"public_key_type_ed25519":"6e368450016cac667ec57347d70c25a83f399d6803442d031545b89457936c42"}}}}]'
+```
+
+<br />
+
+---
+
+### (Alternative) Deploy Game Contract
+You can also deploy the game without using the manager
 ```
 soroban contract deploy \
     --wasm target/wasm32-unknown-unknown/release/tictactoe_game.wasm \
@@ -114,8 +178,7 @@ soroban contract deploy \
     --network-passphrase 'Test SDF Future Network ; October 2022'
 ```
 
-
-### Initialize Game
+### (Alternative) Initialize Game (Only if the game was deployed without using the manager)
 ```
 soroban contract invoke \
     --id 327d8243244fe6f3550951e862d09344cf3fbe319a4ed8c406e40867daf2f730 \
@@ -128,11 +191,15 @@ soroban contract invoke \
     --player_b GBXDNBCQAFWKYZT6YVZUPVYMEWUD6OM5NABUILIDCVC3RFCXSNWEEQEZ
 ```
 
+---
+
+<br />
 
 ### Play
+id: Hash returned after calling the deploy function from the manager
 ```
 soroban contract invoke \
-    --id 327d8243244fe6f3550951e862d09344cf3fbe319a4ed8c406e40867daf2f730 \
+    --id 5b88e05db7228ecb0f3f1929c94abba76ff674efbeb2653146db79e31feb0d3a \
     --secret-key SDO2A45YT56K2V5B5W3PWQSFPGVHA4VKWY7MMXCBKOYPZJDADLCQC56D \
     --rpc-url https://horizon-futurenet.stellar.cash:443/soroban/rpc \
     --network-passphrase 'Test SDF Future Network ; October 2022' \
@@ -142,6 +209,17 @@ soroban contract invoke \
     --pos_x 0 \
     --pos_y 0
 ```
+
+<br/>
+
+---
+## Utils
+### Convert Address into Hex
+Using javascript stellar-sdk
+```
+console.log(StellarSdk.Keypair.fromPublicKey("GBXDNBCQAFWKYZT6YVZUPVYMEWUD6OM5NABUILIDCVC3RFCXSNWEEQEZ").rawPublicKey().toString('hex'));
+```  
+[Online demo](https://jsfiddle.net/byrq3ntu/)
 
 ---
 ## TODO IF TIME IS SUFFICIENT
