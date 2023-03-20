@@ -20,7 +20,7 @@ impl GameContract {
         set_players(&env, &player_a, &player_b);
     }
 
-    pub fn play(env: Env, player: Address, pos_x: u32, pos_y: u32) {
+    pub fn play(env: Env, player: Address, pos_x: u32, pos_y: u32) -> Vec<Symbol>{
         assert!(has_players(&env), "Game is not initialized");
         assert!(allowed_player(&env, player), "It's not your turn");
         assert!(!has_ended(&env), "Game has ended");
@@ -33,6 +33,8 @@ impl GameContract {
 
         change_turn(&env);
         increase_time(&env);
+
+        Self::grid(env)
     }
 
     pub fn turn(env: Env) -> Address {
