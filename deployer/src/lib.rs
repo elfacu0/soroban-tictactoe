@@ -38,7 +38,8 @@ impl Deployer {
             .with_current_contract(&salt)
             .deploy(&wasm_hash);
         let init_fn = symbol!("init");
-        let _: RawVal = env.invoke_contract(&id, &init_fn, init_args.clone());
+
+        let _: RawVal = env.invoke_contract(&id, &init_fn, add_exp(&env,init_args.clone()));
         let game = create_game(&env, &init_args);
         set_game(&env, &id, game);
         id
@@ -80,6 +81,14 @@ fn create_game(env: &Env, init_args: &Vec<RawVal>) -> Game {
 fn set_game(env: &Env, id: &BytesN<32>, game: Game) {
     let key = DataKey::Games(id.clone());
     env.storage().set(&key, &game)
+}
+
+fn add_exp(env: &Env, init_args: Vec<RawVal>) -> Vec<RawVal>{
+    let duration = 60 * 10;
+    let expiration = env.ledger().timestamp() + duration;
+    let mut init_args_exp = init_args;
+    init_args_exp.push_back(expiration.into_val(env));
+    init_args_exp
 }
 
 mod test;
