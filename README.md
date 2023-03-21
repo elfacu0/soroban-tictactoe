@@ -3,6 +3,8 @@ This is a project that enables players to play Tic-tac-toe games on the Stellar 
 
 It consists of two contracts: the first contract is used to create and keep track of Tic-tac-toe games, and the second contract is used to play the games
 
+To prevent excessively long games, each game has a default duration of 10 minutes, after which it will end automatically.
+
 # Contracts
 
 ## Manager contract
@@ -30,7 +32,8 @@ Player_a always starts first
 ```
 Arguments:
     player_a: Address,
-    player_b: Address
+    player_b: Address,
+    expiration: u64       // Expiration as unix timestamp
 ```
 
 ### Play
