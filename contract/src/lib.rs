@@ -9,18 +9,20 @@ pub enum DataKey {
     Grid,
     Winner,
     Time,
+    Expiration,
 }
 
 pub struct GameContract;
 
 #[contractimpl]
 impl GameContract {
-    pub fn init(env: Env, player_a: Address, player_b: Address) {
+    pub fn init(env: Env, player_a: Address, player_b: Address, expiration: u64) {
         assert!(!has_players(&env), "Already initialized");
         set_players(&env, &player_a, &player_b);
+        set_expiration(&env, expiration);
     }
 
-    pub fn play(env: Env, player: Address, pos_x: u32, pos_y: u32) -> Vec<Symbol>{
+    pub fn play(env: Env, player: Address, pos_x: u32, pos_y: u32) -> Vec<Symbol> {
         assert!(has_players(&env), "Game is not initialized");
         assert!(allowed_player(&env, player), "It's not your turn");
         assert!(!has_ended(&env), "Game has ended");
@@ -160,7 +162,7 @@ fn increase_time(env: &Env) {
 }
 
 fn has_ended(env: &Env) -> bool {
-    env.storage().has(&DataKey::Winner) || get_time(env) >= 9
+    env.storage().has(&DataKey::Winner) || get_time(env) >= 9 || is_expired(env)
 }
 
 fn get_winner(env: &Env) -> Address {
@@ -201,6 +203,23 @@ fn check_winner(env: &Env) {
 fn allowed_player(env: &Env, player: Address) -> bool {
     player.require_auth();
     get_player_turn(env) == player
+}
+
+fn get_expiration(env: &Env) -> u64 {
+    env.storage()
+        .get(&DataKey::Expiration)
+        .unwrap_or(Ok(0))
+        .unwrap()
+}
+
+fn set_expiration(env: &Env, expiration: u64) {
+    env.storage().set(&DataKey::Expiration, &expiration);
+}
+
+fn is_expired(env: &Env) -> bool {
+    let ledger_timestamp = env.ledger().timestamp();
+    let exp_timestamp = get_expiration(env);
+    ledger_timestamp >= exp_timestamp
 }
 
 mod test;

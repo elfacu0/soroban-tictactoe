@@ -1,18 +1,58 @@
 #![cfg(test)]
 
 use super::{GameContract, GameContractClient};
+use soroban_sdk::testutils::{Ledger, LedgerInfo};
 use soroban_sdk::{symbol, testutils::Address as _, vec, Address, Env};
+
+struct GameTest {
+    env: Env,
+    player_a: Address,
+    player_b: Address,
+    expiration: u64,
+    client: GameContractClient,
+}
+
+impl GameTest {
+    fn setup() -> Self {
+        let env = Env::default();
+        env.ledger().set(LedgerInfo {
+            timestamp: 12345,
+            protocol_version: 1,
+            sequence_number: 10,
+            network_id: Default::default(),
+            base_reserve: 10,
+        });
+
+        let contract_id = env.register_contract(None, GameContract);
+        let client = GameContractClient::new(&env, &contract_id);
+
+        let player_a = Address::random(&env);
+        let player_b = Address::random(&env);
+
+        let duration = 60 * 10;
+        let expiration = 12345 + duration;
+
+        GameTest {
+            env,
+            player_a,
+            player_b,
+            expiration,
+            client,
+        }
+    }
+}
 
 #[test]
 fn test_initialize() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, GameContract);
-    let client = GameContractClient::new(&env, &contract_id);
+    let GameTest {
+        env: _,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
 
-    let player_a = Address::random(&env);
-    let player_b = Address::random(&env);
-
-    client.init(&player_a, &player_b);
+    client.init(&player_a, &player_b, &expiration);
 
     assert_eq!(client.player_a(), player_a);
     assert_eq!(client.player_b(), player_b);
@@ -23,27 +63,29 @@ fn test_initialize() {
 #[test]
 #[should_panic]
 fn test_already_initialized() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, GameContract);
-    let client = GameContractClient::new(&env, &contract_id);
+    let GameTest {
+        env: _,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
 
-    let player_a = Address::random(&env);
-    let player_b = Address::random(&env);
-
-    client.init(&player_a, &player_b);
-    client.init(&player_a, &player_b);
+    client.init(&player_a, &player_b, &expiration);
+    client.init(&player_a, &player_b, &expiration);
 }
 
 #[test]
 fn test_change_turn() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, GameContract);
-    let client = GameContractClient::new(&env, &contract_id);
+    let GameTest {
+        env: _,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
 
-    let player_a = Address::random(&env);
-    let player_b = Address::random(&env);
-
-    client.init(&player_a, &player_b);
+    client.init(&player_a, &player_b, &expiration);
 
     let pos_x: u32 = 2;
     let pos_y: u32 = 2;
@@ -58,15 +100,16 @@ fn test_change_turn() {
 #[test]
 #[should_panic]
 fn test_other_player() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, GameContract);
-    let client = GameContractClient::new(&env, &contract_id);
-
-    let player_a = Address::random(&env);
-    let player_b = Address::random(&env);
+    let GameTest {
+        env,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
     let player_c = Address::random(&env);
 
-    client.init(&player_a, &player_b);
+    client.init(&player_a, &player_b, &expiration);
 
     let pos_x: u32 = 2;
     let pos_y: u32 = 2;
@@ -78,14 +121,15 @@ fn test_other_player() {
 #[test]
 #[should_panic]
 fn test_twice_play() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, GameContract);
-    let client = GameContractClient::new(&env, &contract_id);
+    let GameTest {
+        env: _,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
 
-    let player_a = Address::random(&env);
-    let player_b = Address::random(&env);
-
-    client.init(&player_a, &player_b);
+    client.init(&player_a, &player_b, &expiration);
 
     let pos_x: u32 = 2;
     let pos_y: u32 = 2;
@@ -96,14 +140,15 @@ fn test_twice_play() {
 
 #[test]
 fn test_mark_empty_cell() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, GameContract);
-    let client = GameContractClient::new(&env, &contract_id);
+    let GameTest {
+        env: _,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
 
-    let player_a = Address::random(&env);
-    let player_b = Address::random(&env);
-
-    client.init(&player_a, &player_b);
+    client.init(&player_a, &player_b, &expiration);
 
     let pos_x: u32 = 2;
     let pos_y: u32 = 2;
@@ -114,14 +159,15 @@ fn test_mark_empty_cell() {
 #[test]
 #[should_panic]
 fn test_mark_used_cell() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, GameContract);
-    let client = GameContractClient::new(&env, &contract_id);
+    let GameTest {
+        env: _,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
 
-    let player_a = Address::random(&env);
-    let player_b = Address::random(&env);
-
-    client.init(&player_a, &player_b);
+    client.init(&player_a, &player_b, &expiration);
 
     let pos_x: u32 = 2;
     let pos_y: u32 = 2;
@@ -133,28 +179,30 @@ fn test_mark_used_cell() {
 #[test]
 #[should_panic]
 fn test_no_winner() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, GameContract);
-    let client = GameContractClient::new(&env, &contract_id);
+    let GameTest {
+        env: _,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
 
-    let player_a = Address::random(&env);
-    let player_b = Address::random(&env);
-
-    client.init(&player_a, &player_b);
+    client.init(&player_a, &player_b, &expiration);
 
     client.winner();
 }
 
 #[test]
 fn test_winner_a() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, GameContract);
-    let client = GameContractClient::new(&env, &contract_id);
+    let GameTest {
+        env: _,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
 
-    let player_a = Address::random(&env);
-    let player_b = Address::random(&env);
-
-    client.init(&player_a, &player_b);
+    client.init(&player_a, &player_b, &expiration);
 
     client.play(&player_a, &0, &0);
     client.play(&player_b, &0, &1);
@@ -167,14 +215,15 @@ fn test_winner_a() {
 
 #[test]
 fn test_winner_b() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, GameContract);
-    let client = GameContractClient::new(&env, &contract_id);
+    let GameTest {
+        env: _,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
 
-    let player_a = Address::random(&env);
-    let player_b = Address::random(&env);
-
-    client.init(&player_a, &player_b);
+    client.init(&player_a, &player_b, &expiration);
 
     client.play(&player_a, &2, &0);
     client.play(&player_b, &0, &0);
@@ -189,14 +238,15 @@ fn test_winner_b() {
 #[test]
 #[should_panic]
 fn test_game_over() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, GameContract);
-    let client = GameContractClient::new(&env, &contract_id);
+    let GameTest {
+        env: _,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
 
-    let player_a = Address::random(&env);
-    let player_b = Address::random(&env);
-
-    client.init(&player_a, &player_b);
+    client.init(&player_a, &player_b, &expiration);
 
     assert_eq!(client.ended(), false);
 
@@ -213,14 +263,15 @@ fn test_game_over() {
 #[test]
 #[should_panic]
 fn test_draw() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, GameContract);
-    let client = GameContractClient::new(&env, &contract_id);
+    let GameTest {
+        env: _,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
 
-    let player_a = Address::random(&env);
-    let player_b = Address::random(&env);
-
-    client.init(&player_a, &player_b);
+    client.init(&player_a, &player_b, &expiration);
 
     client.play(&player_a, &0, &0);
     client.play(&player_b, &1, &0);
@@ -239,12 +290,13 @@ fn test_draw() {
 
 #[test]
 fn test_grid() {
-    let env = Env::default();
-    let contract_id = env.register_contract(None, GameContract);
-    let client = GameContractClient::new(&env, &contract_id);
-
-    let player_a = Address::random(&env);
-    let player_b = Address::random(&env);
+    let GameTest {
+        env,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
 
     let empty = symbol!("");
     let x = symbol!("X");
@@ -262,7 +314,7 @@ fn test_grid() {
         empty.clone(),
     ];
 
-    client.init(&player_a, &player_b);
+    client.init(&player_a, &player_b, &expiration);
     assert_eq!(client.grid(), grid);
 
     client.play(&player_a, &2, &2);
@@ -280,4 +332,19 @@ fn test_grid() {
     client.play(&player_b, &1, &0);
     grid.set(7, o.clone());
     assert_eq!(client.grid(), grid);
+}
+
+#[test]
+fn test_expired() {
+    let GameTest {
+        env: _,
+        player_a,
+        player_b,
+        expiration: _,
+        client,
+    } = GameTest::setup();
+
+    client.init(&player_a, &player_b, &100);
+
+    assert_eq!(client.ended(), true);
 }
