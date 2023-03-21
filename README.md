@@ -220,7 +220,7 @@ soroban contract invoke \
 ### Convert Address into Hex
 Using javascript stellar-sdk
 ```
-console.log(StellarSdk.Keypair.fromPublicKey("GBXDNBCQAFWKYZT6YVZUPVYMEWUD6OM5NABUILIDCVC3RFCXSNWEEQEZ").rawPublicKey().toString('hex'));
+StellarSdk.Keypair.fromPublicKey("GBXDNBCQAFWKYZT6YVZUPVYMEWUD6OM5NABUILIDCVC3RFCXSNWEEQEZ").rawPublicKey().toString('hex');
 ```  
 [Online demo](https://jsfiddle.net/byrq3ntu/)
 
@@ -228,4 +228,3 @@ console.log(StellarSdk.Keypair.fromPublicKey("GBXDNBCQAFWKYZT6YVZUPVYMEWUD6OM5NA
 ## TODO IF TIME IS SUFFICIENT
 - [ ] Make grid n x n
 - [ ] Allow bets
-- [ ] Implement time limit
