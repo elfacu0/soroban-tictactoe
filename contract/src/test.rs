@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use super::{GameContract, GameContractClient};
+use super::{Bet, GameContract, GameContractClient};
 use soroban_sdk::testutils::{Ledger, LedgerInfo};
 use soroban_sdk::{symbol, testutils::Address as _, vec, Address, Env};
 
@@ -40,6 +40,25 @@ impl GameTest {
             client,
         }
     }
+
+    fn make_player_a_win(client: &GameContractClient, player_a: &Address, player_b: &Address){
+        client.play(&player_a, &0, &0);
+        client.play(&player_b, &0, &1);
+        client.play(&player_a, &1, &0);
+        client.play(&player_b, &1, &1);
+        client.play(&player_a, &2, &0);
+    }
+}
+
+mod token {
+    soroban_sdk::contractimport!(file = "../soroban_token_spec.wasm");
+    pub type TokenClient = Client;
+}
+
+use token::TokenClient;
+
+fn create_token_contract(e: &Env, admin: &Address) -> TokenClient {
+    TokenClient::new(e, &e.register_stellar_asset_contract(admin.clone()))
 }
 
 #[test]
@@ -204,12 +223,9 @@ fn test_winner_a() {
 
     client.init(&player_a, &player_b, &expiration);
 
-    client.play(&player_a, &0, &0);
-    client.play(&player_b, &0, &1);
-    client.play(&player_a, &1, &0);
-    client.play(&player_b, &1, &1);
-    client.play(&player_a, &2, &0);
+    GameTest::make_player_a_win(&client,&player_a,&player_b);
 
+    assert_eq!(client.ended(), true);
     assert_eq!(client.winner(), player_a);
 }
 
@@ -232,6 +248,7 @@ fn test_winner_b() {
     client.play(&player_a, &1, &1);
     client.play(&player_b, &0, &2);
 
+    assert_eq!(client.ended(), true);
     assert_eq!(client.winner(), player_b);
 }
 
@@ -347,4 +364,113 @@ fn test_expired() {
     client.init(&player_a, &player_b, &100);
 
     assert_eq!(client.ended(), true);
+}
+
+#[test]
+fn test_make_bet() {
+    let GameTest {
+        env,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
+
+    client.init(&player_a, &player_b, &expiration);
+
+    let token_admin = Address::random(&env);
+    let token = create_token_contract(&env, &token_admin);
+    token.mint(&token_admin, &player_a, &1000);
+    token.mint(&token_admin, &player_b, &1000);
+
+    let mut bet = Bet {
+        amount: 100,
+        token: token.contract_id.clone(),
+        paid: false,
+    };
+
+    assert_eq!(client.bet(&player_a, &token.contract_id, &100), bet);
+
+    bet.amount = 200;
+    assert_eq!(client.bet(&player_a, &token.contract_id, &100), bet);
+
+    assert_eq!(client.bet(&player_b, &token.contract_id, &200), bet);
+}
+
+#[test]
+#[should_panic]
+fn test_bet_no_founds() {
+    let GameTest {
+        env,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
+
+    client.init(&player_a, &player_b, &expiration);
+
+    let token_admin = Address::random(&env);
+    let token = create_token_contract(&env, &token_admin);
+
+    client.bet(&player_a, &token.contract_id, &100);
+}
+
+#[test]
+#[should_panic]
+fn test_no_bet_no_collect() {
+    let GameTest {
+        env: _,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
+
+    client.init(&player_a, &player_b, &expiration);
+    client.clct_bet(&player_a);
+}
+
+#[test]
+#[should_panic]
+fn test_no_end_no_collect() {
+    let GameTest {
+        env,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
+
+    client.init(&player_a, &player_b, &expiration);
+
+    let token_admin = Address::random(&env);
+    let token = create_token_contract(&env, &token_admin);
+    token.mint(&token_admin, &player_a, &1000);
+
+    client.bet(&player_a, &token.contract_id, &100);
+    client.clct_bet(&player_a);
+}
+
+#[test]
+fn test_collect_own_bet() {
+    let GameTest {
+        env,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
+
+    client.init(&player_a, &player_b, &expiration);
+
+    let token_admin = Address::random(&env);
+    let token = create_token_contract(&env, &token_admin);
+    token.mint(&token_admin, &player_a, &1000);
+
+    client.bet(&player_a, &token.contract_id, &100);
+
+    GameTest::make_player_a_win(&client, &player_a, &player_b);
+
+    client.clct_bet(&player_a);
 }
