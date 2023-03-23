@@ -1,5 +1,5 @@
 #![no_std]
-use core::cmp::{min, max};
+use core::cmp::{max, min};
 
 use soroban_sdk::{contractimpl, contracttype, symbol, vec, Address, BytesN, Env, Symbol, Vec};
 
@@ -16,15 +16,11 @@ pub enum DataKey {
     Winner,
     Time,
     Expiration,
+    BetPlayerA,
+    BetPlayerB,
 }
 
-#[contracttype]
-pub enum Bets {
-    PlayerA,
-    PlayerB,
-}
-
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 #[contracttype]
 pub struct Bet {
     pub token: BytesN<32>,
@@ -100,14 +96,13 @@ impl GameContract {
         res
     }
 
-    pub fn bet(env: Env, player: Address, token: BytesN<32>, amount: i128) {
-        make_bet(&env, player, token, amount);
+    pub fn bet(env: Env, player: Address, token: BytesN<32>, amount: i128) -> Bet {
+        make_bet(&env, player, token, amount)
     }
 
     pub fn clct_bet(env: Env, player: Address) {
         collect_bet(&env, player);
     }
-
 }
 
 fn has_players(env: &Env) -> bool {
@@ -257,33 +252,46 @@ fn is_expired(env: &Env) -> bool {
 
 fn has_bet(env: &Env, player: Address) -> bool {
     if player == get_player_a(env) {
-        return env.storage().has(&Bets::PlayerA);
+        return env.storage().has(&DataKey::BetPlayerA);
     } else {
-        return env.storage().has(&Bets::PlayerB);
+        return env.storage().has(&DataKey::BetPlayerB);
     }
 }
 
 fn add_bet(env: &Env, player: Address, amount: i128) -> Bet {
-    let bet = get_bet(env, player.clone());
+    let mut bet = get_bet(env, player.clone());
     bet.amount += amount;
-    set_bet(env, player.clone(), bet);
-    bet
+    set_bet(env, player.clone(), bet)
 }
 
 fn get_bet(env: &Env, player: Address) -> Bet {
+    let default_bet = Bet {
+        token: BytesN::from_array(&env, &[0; 32]),
+        amount: 0,
+        paid: false,
+    };
     if player == get_player_a(env) {
-        return env.storage().get(&Bets::PlayerA).unwrap().unwrap();
+        return env
+            .storage()
+            .get(&DataKey::BetPlayerA)
+            .unwrap_or(Ok(default_bet))
+            .unwrap();
     } else {
-        return env.storage().get(&Bets::PlayerB).unwrap().unwrap();
+        return env
+            .storage()
+            .get(&DataKey::BetPlayerB)
+            .unwrap_or(Ok(default_bet))
+            .unwrap();
     }
 }
 
-fn set_bet(env: &Env, player: Address, bet: Bet) {
+fn set_bet(env: &Env, player: Address, bet: Bet) -> Bet {
     if player == get_player_a(env) {
-        env.storage().set(&Bets::PlayerA, &bet);
+        env.storage().set(&DataKey::BetPlayerA, &bet);
     } else {
-        env.storage().set(&Bets::PlayerB, &bet);
+        env.storage().set(&DataKey::BetPlayerB, &bet);
     }
+    bet
 }
 
 fn make_bet(env: &Env, player: Address, token: BytesN<32>, amount: i128) -> Bet {
@@ -293,11 +301,14 @@ fn make_bet(env: &Env, player: Address, token: BytesN<32>, amount: i128) -> Bet 
     player.require_auth();
 
     token::Client::new(&env, &token).xfer(&player, &env.current_contract_address(), &amount);
+    let mut bet = Bet {
+        token,
+        amount,
+        paid: false,
+    };
 
-    let bet;
-    if !has_bet(env, player) {
-        bet = Bet { token, amount, paid: false };
-        set_bet(env, player, bet);
+    if !has_bet(env, player.clone()) {
+        bet = set_bet(env, player, bet);
     } else {
         bet = add_bet(env, player, amount)
     }
@@ -305,30 +316,33 @@ fn make_bet(env: &Env, player: Address, token: BytesN<32>, amount: i128) -> Bet 
     bet
 }
 
-fn collect_bet(env: &Env,player: Address){
+fn collect_bet(env: &Env, player: Address) {
     player.require_auth();
-    assert!(!has_bet(env, player),"You don't have a bet");
+    assert!(has_bet(env, player.clone()), "You don't have a bet");
+    assert!(has_ended(env), "Game is still being played");
 
-    let mut bet = get_bet(env, player);
-    assert!(bet.paid,"You have already been paid");
+    let mut bet = get_bet(env, player.clone());
+    assert!(bet.paid == false, "You have already been paid");
 
     let player_a_bet = get_bet(env, get_player_a(env));
     let player_b_bet = get_bet(env, get_player_b(env));
     let amount = min(player_a_bet.amount, player_b_bet.amount);
 
-    if player == get_player_a(env){
-        let returned_ammount = max(0,player_a_bet.amount- player_b_bet.amount);
-        pay(env, &player, player_a_bet.token, returned_ammount);
+    if player == get_player_a(env) {
+        let returned_amount = max(0, player_a_bet.amount - player_b_bet.amount);
+        pay(env, &player, player_a_bet.token, returned_amount);
 
-        if has_winner(env) && get_winner(env) == player{
-            pay(env, &player, player_b_bet.token, player_b_bet.amount);
+        if has_winner(env) && get_winner(env) == player {
+            let diff = player_a_bet.amount - returned_amount;
+            pay(env, &player, player_b_bet.token, amount + diff);
         }
-    }else{
-        let returned_ammount = max(0,player_b_bet.amount- player_a_bet.amount);
-        pay(env, &player, player_b_bet.token, returned_ammount);
+    } else {
+        let returned_amount = max(0, player_b_bet.amount - player_a_bet.amount);
+        pay(env, &player, player_b_bet.token, returned_amount);
 
-        if has_winner(env) && get_winner(env) == player{
-            pay(env, &player, player_a_bet.token, player_a_bet.amount);
+        if has_winner(env) && get_winner(env) == player {
+            let diff = player_b_bet.amount - returned_amount;
+            pay(env, &player, player_a_bet.token, amount + diff);
         }
     }
 
@@ -336,17 +350,11 @@ fn collect_bet(env: &Env,player: Address){
     set_bet(env, player, bet);
 }
 
-fn pay(env: &Env, to: &Address, token: BytesN<32>, ammount: i128) {
-    if ammount <= 0{ return }
-    if has_winner(env) {
-        let player = get_winner(env);
-        
-        token::Client::new(&env, &bet.token).xfer(
-            &env.current_contract_address(),
-            &player,
-            &amount,
-        );
+fn pay(env: &Env, to: &Address, token: BytesN<32>, amount: i128) {
+    if amount <= 0 {
+        return;
     }
+    token::Client::new(&env, &token).xfer(&env.current_contract_address(), &to, &amount);
 }
 
 mod test;
