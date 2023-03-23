@@ -71,6 +71,14 @@ Arguments:
     amount: i128,
 ```
 
+### Collect Bet
+After the game has ended, players can collect their winnings. In the event that they have bet a higher amount than their opponent, the difference will be returned to them.
+For that call the `clct_bet` with your own address  
+```
+Arguments:
+    player: Address, 
+```
+
 
 <br/>
 

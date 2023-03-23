@@ -1,5 +1,11 @@
 #![no_std]
-use soroban_sdk::{contractimpl, contracttype, symbol, vec, Address, Env, Symbol, Vec};
+use core::cmp::{min, max};
+
+use soroban_sdk::{contractimpl, contracttype, symbol, vec, Address, BytesN, Env, Symbol, Vec};
+
+mod token {
+    soroban_sdk::contractimport!(file = "../soroban_token_spec.wasm");
+}
 
 #[contracttype]
 pub enum DataKey {
@@ -10,6 +16,20 @@ pub enum DataKey {
     Winner,
     Time,
     Expiration,
+}
+
+#[contracttype]
+pub enum Bets {
+    PlayerA,
+    PlayerB,
+}
+
+#[derive(Clone)]
+#[contracttype]
+pub struct Bet {
+    pub token: BytesN<32>,
+    pub amount: i128,
+    pub paid: bool,
 }
 
 pub struct GameContract;
@@ -79,6 +99,15 @@ impl GameContract {
         }
         res
     }
+
+    pub fn bet(env: Env, player: Address, token: BytesN<32>, amount: i128) {
+        make_bet(&env, player, token, amount);
+    }
+
+    pub fn clct_bet(env: Env, player: Address) {
+        collect_bet(&env, player);
+    }
+
 }
 
 fn has_players(env: &Env) -> bool {
@@ -165,6 +194,10 @@ fn has_ended(env: &Env) -> bool {
     env.storage().has(&DataKey::Winner) || get_time(env) >= 9 || is_expired(env)
 }
 
+fn has_winner(env: &Env) -> bool {
+    env.storage().has(&DataKey::Winner)
+}
+
 fn get_winner(env: &Env) -> Address {
     env.storage().get(&DataKey::Winner).unwrap().unwrap()
 }
@@ -220,6 +253,100 @@ fn is_expired(env: &Env) -> bool {
     let ledger_timestamp = env.ledger().timestamp();
     let exp_timestamp = get_expiration(env);
     ledger_timestamp >= exp_timestamp
+}
+
+fn has_bet(env: &Env, player: Address) -> bool {
+    if player == get_player_a(env) {
+        return env.storage().has(&Bets::PlayerA);
+    } else {
+        return env.storage().has(&Bets::PlayerB);
+    }
+}
+
+fn add_bet(env: &Env, player: Address, amount: i128) -> Bet {
+    let bet = get_bet(env, player.clone());
+    bet.amount += amount;
+    set_bet(env, player.clone(), bet);
+    bet
+}
+
+fn get_bet(env: &Env, player: Address) -> Bet {
+    if player == get_player_a(env) {
+        return env.storage().get(&Bets::PlayerA).unwrap().unwrap();
+    } else {
+        return env.storage().get(&Bets::PlayerB).unwrap().unwrap();
+    }
+}
+
+fn set_bet(env: &Env, player: Address, bet: Bet) {
+    if player == get_player_a(env) {
+        env.storage().set(&Bets::PlayerA, &bet);
+    } else {
+        env.storage().set(&Bets::PlayerB, &bet);
+    }
+}
+
+fn make_bet(env: &Env, player: Address, token: BytesN<32>, amount: i128) -> Bet {
+    if player != get_player_a(env) && player != get_player_b(env) {
+        panic!("You are not allowed to make a bet");
+    }
+    player.require_auth();
+
+    token::Client::new(&env, &token).xfer(&player, &env.current_contract_address(), &amount);
+
+    let bet;
+    if !has_bet(env, player) {
+        bet = Bet { token, amount, paid: false };
+        set_bet(env, player, bet);
+    } else {
+        bet = add_bet(env, player, amount)
+    }
+
+    bet
+}
+
+fn collect_bet(env: &Env,player: Address){
+    player.require_auth();
+    assert!(!has_bet(env, player),"You don't have a bet");
+
+    let mut bet = get_bet(env, player);
+    assert!(bet.paid,"You have already been paid");
+
+    let player_a_bet = get_bet(env, get_player_a(env));
+    let player_b_bet = get_bet(env, get_player_b(env));
+    let amount = min(player_a_bet.amount, player_b_bet.amount);
+
+    if player == get_player_a(env){
+        let returned_ammount = max(0,player_a_bet.amount- player_b_bet.amount);
+        pay(env, &player, player_a_bet.token, returned_ammount);
+
+        if has_winner(env) && get_winner(env) == player{
+            pay(env, &player, player_b_bet.token, player_b_bet.amount);
+        }
+    }else{
+        let returned_ammount = max(0,player_b_bet.amount- player_a_bet.amount);
+        pay(env, &player, player_b_bet.token, returned_ammount);
+
+        if has_winner(env) && get_winner(env) == player{
+            pay(env, &player, player_a_bet.token, player_a_bet.amount);
+        }
+    }
+
+    bet.paid = true;
+    set_bet(env, player, bet);
+}
+
+fn pay(env: &Env, to: &Address, token: BytesN<32>, ammount: i128) {
+    if ammount <= 0{ return }
+    if has_winner(env) {
+        let player = get_winner(env);
+        
+        token::Client::new(&env, &bet.token).xfer(
+            &env.current_contract_address(),
+            &player,
+            &amount,
+        );
+    }
 }
 
 mod test;
