@@ -382,6 +382,7 @@ fn test_make_bet() {
     let token = create_token_contract(&env, &token_admin);
     token.mint(&token_admin, &player_a, &1000);
     token.mint(&token_admin, &player_b, &1000);
+    assert_eq!(token.balance(&player_a),1000);
 
     let mut bet = Bet {
         amount: 100,
@@ -390,11 +391,14 @@ fn test_make_bet() {
     };
 
     assert_eq!(client.bet(&player_a, &token.contract_id, &100), bet);
+    assert_eq!(token.balance(&player_a),900);
 
     bet.amount = 200;
     assert_eq!(client.bet(&player_a, &token.contract_id, &100), bet);
+    assert_eq!(token.balance(&player_a),800);
 
     assert_eq!(client.bet(&player_b, &token.contract_id, &200), bet);
+    assert_eq!(token.balance(&player_b),800);
 }
 
 #[test]
@@ -472,5 +476,61 @@ fn test_collect_own_bet() {
 
     GameTest::make_player_a_win(&client, &player_a, &player_b);
 
+    assert_eq!(token.balance(&player_a),900);
+    client.clct_bet(&player_a);
+    assert_eq!(token.balance(&player_a),1000);
+}
+
+#[test]
+fn test_collect_opponent_bet() {
+    let GameTest {
+        env,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
+
+    client.init(&player_a, &player_b, &expiration);
+
+    let token_admin = Address::random(&env);
+    let token = create_token_contract(&env, &token_admin);
+    token.mint(&token_admin, &player_a, &1000);
+    token.mint(&token_admin, &player_b, &1000);
+
+    client.bet(&player_a, &token.contract_id, &100);
+    client.bet(&player_b, &token.contract_id, &100);
+
+    GameTest::make_player_a_win(&client, &player_a, &player_b);
+
+    client.clct_bet(&player_a);
+    assert_eq!(token.balance(&player_a),1100);
+}
+
+#[test]
+#[should_panic]
+fn test_no_collect_twice() {
+    let GameTest {
+        env,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
+
+    client.init(&player_a, &player_b, &expiration);
+
+    let token_admin = Address::random(&env);
+    let token = create_token_contract(&env, &token_admin);
+    token.mint(&token_admin, &player_a, &1000);
+    token.mint(&token_admin, &player_b, &1000);
+
+    client.bet(&player_a, &token.contract_id, &100);
+    client.bet(&player_b, &token.contract_id, &100);
+
+    GameTest::make_player_a_win(&client, &player_a, &player_b);
+
+    client.clct_bet(&player_a);
+    assert_eq!(token.balance(&player_a),1100);
     client.clct_bet(&player_a);
 }
