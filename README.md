@@ -16,6 +16,8 @@ It Stores all the games and their states, which can be accessed later.
 ## Game contract
 This contract manage the game status, to make a move you need to call the `play` function.
 It checks for winning conditions and a tie, and ends the game when either condition is met
+
+It also allows the player to make bets, if there is a winner the minium bet is paid and the rest is returned.
 <br />
 
 ---
@@ -59,6 +61,16 @@ To know whose turn it is, call the `turn` function without any argument.
 
 ### Grid
 To view the grid you can call the `grid` function without any argument.
+
+### Bet
+Make a bet by calling the `bet` function. If a bet has already been made, the function will increase the existing bet by the specified amount. Note that players can only bet on their own victory.
+```
+Arguments:
+    player: Address, 
+    token: BytesN<32>,
+    amount: i128,
+```
+
 
 <br/>
 
