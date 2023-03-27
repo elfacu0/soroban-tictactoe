@@ -73,12 +73,13 @@ pub fn get_player_turn(env: &Env) -> Address {
 }
 
 fn change_turn(env: &Env) {
-    if get_player_turn(env) == get_player_a(env) {
-        env.storage()
-            .set(&DataKey::PlayerTurn, &(get_player_b(env)));
-    } else {
-        env.storage()
-            .set(&DataKey::PlayerTurn, &(get_player_a(env)));
+    match get_player_turn(env) == get_player_a(env) {
+        true => env
+            .storage()
+            .set(&DataKey::PlayerTurn, &(get_player_b(env))),
+        false => env
+            .storage()
+            .set(&DataKey::PlayerTurn, &(get_player_a(env))),
     }
 }
 
