@@ -508,6 +508,58 @@ fn test_collect_opponent_bet() {
 }
 
 #[test]
+fn test_collect_opponent_bet_lower() {
+    let GameTest {
+        env,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
+
+    client.init(&player_a, &player_b, &expiration);
+
+    let token_admin = Address::random(&env);
+    let token = create_token_contract(&env, &token_admin);
+    token.mint(&token_admin, &player_a, &1000);
+    token.mint(&token_admin, &player_b, &1000);
+
+    client.bet(&player_a, &token.contract_id, &100);
+    client.bet(&player_b, &token.contract_id, &50);
+
+    GameTest::make_player_a_win(&client, &player_a, &player_b);
+
+    client.clct_bet(&player_a);
+    assert_eq!(token.balance(&player_a),1050);
+}
+
+#[test]
+fn test_collect_opponent_bet_higher() {
+    let GameTest {
+        env,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
+
+    client.init(&player_a, &player_b, &expiration);
+
+    let token_admin = Address::random(&env);
+    let token = create_token_contract(&env, &token_admin);
+    token.mint(&token_admin, &player_a, &1000);
+    token.mint(&token_admin, &player_b, &1000);
+
+    client.bet(&player_a, &token.contract_id, &100);
+    client.bet(&player_b, &token.contract_id, &200);
+
+    GameTest::make_player_a_win(&client, &player_a, &player_b);
+
+    client.clct_bet(&player_a);
+    assert_eq!(token.balance(&player_a),1100);
+}
+
+#[test]
 #[should_panic]
 fn test_no_collect_twice() {
     let GameTest {
