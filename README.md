@@ -1,9 +1,13 @@
-# Stellar Tic-tac-toe
+# 🚀 Stellar Tic-tac-toe 🚀
 This is a project that enables players to play Tic-tac-toe games on the Stellar network.
 
 It consists of two contracts: the first contract is used to create and keep track of Tic-tac-toe games, and the second contract is used to play the games
 
 To prevent excessively long games, each game has a default duration of 10 minutes, after which it will end automatically.
+
+# ⚠️ Version
+This project was developed using the Soroban SDK and Soroban CLI version 0.6.0. Please note that it is not compatible with earlier versions and may not be compatible with future releases
+
 
 # Contracts
 
@@ -247,4 +251,3 @@ StellarSdk.Keypair.fromPublicKey("GBXDNBCQAFWKYZT6YVZUPVYMEWUD6OM5NABUILIDCVC3RF
 ---
 ## TODO IF TIME IS SUFFICIENT
 - [ ] Make grid n x n
-- [ ] Allow bets
