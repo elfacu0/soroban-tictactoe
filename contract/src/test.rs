@@ -2,6 +2,7 @@
 
 use super::{Bet, GameContract, GameContractClient};
 use soroban_sdk::testutils::{Ledger, LedgerInfo};
+use soroban_sdk::Vec;
 use soroban_sdk::{symbol, testutils::Address as _, vec, Address, Env};
 
 struct GameTest {
@@ -41,7 +42,7 @@ impl GameTest {
         }
     }
 
-    fn make_player_a_win(client: &GameContractClient, player_a: &Address, player_b: &Address){
+    fn make_player_a_win(client: &GameContractClient, player_a: &Address, player_b: &Address) {
         client.play(&player_a, &0, &0);
         client.play(&player_b, &0, &1);
         client.play(&player_a, &1, &0);
@@ -223,7 +224,7 @@ fn test_winner_a() {
 
     client.init(&player_a, &player_b, &expiration);
 
-    GameTest::make_player_a_win(&client,&player_a,&player_b);
+    GameTest::make_player_a_win(&client, &player_a, &player_b);
 
     assert_eq!(client.ended(), true);
     assert_eq!(client.winner(), player_a);
@@ -382,7 +383,7 @@ fn test_make_bet() {
     let token = create_token_contract(&env, &token_admin);
     token.mint(&token_admin, &player_a, &1000);
     token.mint(&token_admin, &player_b, &1000);
-    assert_eq!(token.balance(&player_a),1000);
+    assert_eq!(token.balance(&player_a), 1000);
 
     let mut bet = Bet {
         amount: 100,
@@ -391,14 +392,14 @@ fn test_make_bet() {
     };
 
     assert_eq!(client.bet(&player_a, &token.contract_id, &100), bet);
-    assert_eq!(token.balance(&player_a),900);
+    assert_eq!(token.balance(&player_a), 900);
 
     bet.amount = 200;
     assert_eq!(client.bet(&player_a, &token.contract_id, &100), bet);
-    assert_eq!(token.balance(&player_a),800);
+    assert_eq!(token.balance(&player_a), 800);
 
     assert_eq!(client.bet(&player_b, &token.contract_id, &200), bet);
-    assert_eq!(token.balance(&player_b),800);
+    assert_eq!(token.balance(&player_b), 800);
 }
 
 #[test]
@@ -476,9 +477,19 @@ fn test_collect_own_bet() {
 
     GameTest::make_player_a_win(&client, &player_a, &player_b);
 
-    assert_eq!(token.balance(&player_a),900);
-    client.clct_bet(&player_a);
-    assert_eq!(token.balance(&player_a),1000);
+    assert_eq!(token.balance(&player_a), 900);
+
+    let exp_res: Vec<Bet> = Vec::from_array(
+        &env,
+        [Bet {
+            token: token.contract_id.clone(),
+            amount: 100,
+            paid: true,
+        }],
+    );
+
+    assert_eq!(client.clct_bet(&player_a), exp_res);
+    assert_eq!(token.balance(&player_a), 1000);
 }
 
 #[test]
@@ -503,8 +514,24 @@ fn test_collect_opponent_bet() {
 
     GameTest::make_player_a_win(&client, &player_a, &player_b);
 
-    client.clct_bet(&player_a);
-    assert_eq!(token.balance(&player_a),1100);
+    let exp_res: Vec<Bet> = Vec::from_array(
+        &env,
+        [
+            Bet {
+                token: token.contract_id.clone(),
+                amount: 0,
+                paid: true,
+            },
+            Bet {
+                token: token.contract_id.clone(),
+                amount: 200,
+                paid: true,
+            },
+        ],
+    );
+
+    assert_eq!(client.clct_bet(&player_a), exp_res);
+    assert_eq!(token.balance(&player_a), 1100);
 }
 
 #[test]
@@ -529,8 +556,24 @@ fn test_collect_opponent_bet_lower() {
 
     GameTest::make_player_a_win(&client, &player_a, &player_b);
 
-    client.clct_bet(&player_a);
-    assert_eq!(token.balance(&player_a),1050);
+    let exp_res: Vec<Bet> = Vec::from_array(
+        &env,
+        [
+            Bet {
+                token: token.contract_id.clone(),
+                amount: 50,
+                paid: true,
+            },
+            Bet {
+                token: token.contract_id.clone(),
+                amount: 100,
+                paid: true,
+            },
+        ],
+    );
+
+    assert_eq!(client.clct_bet(&player_a), exp_res);
+    assert_eq!(token.balance(&player_a), 1050);
 }
 
 #[test]
@@ -555,8 +598,24 @@ fn test_collect_opponent_bet_higher() {
 
     GameTest::make_player_a_win(&client, &player_a, &player_b);
 
-    client.clct_bet(&player_a);
-    assert_eq!(token.balance(&player_a),1100);
+    let exp_res: Vec<Bet> = Vec::from_array(
+        &env,
+        [
+            Bet {
+                token: token.contract_id.clone(),
+                amount: 0,
+                paid: true,
+            },
+            Bet {
+                token: token.contract_id.clone(),
+                amount: 200,
+                paid: true,
+            },
+        ],
+    );
+
+    assert_eq!(client.clct_bet(&player_a), exp_res);
+    assert_eq!(token.balance(&player_a), 1100);
 }
 
 #[test]
@@ -583,6 +642,6 @@ fn test_no_collect_twice() {
     GameTest::make_player_a_win(&client, &player_a, &player_b);
 
     client.clct_bet(&player_a);
-    assert_eq!(token.balance(&player_a),1100);
+    assert_eq!(token.balance(&player_a), 1100);
     client.clct_bet(&player_a);
 }

@@ -46,8 +46,8 @@ impl GameContract {
         bet::make(&env, player, token, amount)
     }
 
-    pub fn clct_bet(env: Env, player: Address) {
-        bet::collect(&env, player);
+    pub fn clct_bet(env: Env, player: Address) -> Vec<Bet> {
+        bet::collect(&env, player)
     }
 }
 

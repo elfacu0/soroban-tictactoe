@@ -1,7 +1,7 @@
 use crate::game::{get_player_a, get_player_b, get_winner, has_ended, has_winner};
 use crate::storage::DataKey;
 use core::cmp::{max, min};
-use soroban_sdk::{contracttype, Address, BytesN, Env};
+use soroban_sdk::{contracttype, Address, BytesN, Env, Vec, vec};
 
 mod token {
     soroban_sdk::contractimport!(file = "../soroban_token_spec.wasm");
@@ -71,13 +71,15 @@ pub fn make(env: &Env, player: Address, token: BytesN<32>, amount: i128) -> Bet 
     }
 }
 
-pub fn collect(env: &Env, player: Address) {
+pub fn collect(env: &Env, player: Address) -> Vec<Bet> {
     player.require_auth();
     assert!(has_bet(env, player.clone()), "You don't have a bet");
     assert!(has_ended(env), "Game is still being played");
 
     let mut bet = get_bet(env, player.clone());
     assert!(bet.paid == false, "You have already been paid");
+
+    let mut res = vec![env];
 
     let player_a_bet = get_bet(env, get_player_a(env));
     let player_b_bet = get_bet(env, get_player_b(env));
@@ -89,15 +91,30 @@ pub fn collect(env: &Env, player: Address) {
     };
 
     let returned_amount = max(0, player_bet.amount - opponent_bet.amount);
-    pay(env, &player, player_bet.token, returned_amount);
+    pay(env, &player, player_bet.token.clone(), returned_amount);
 
-    if has_winner(env) && get_winner(env) == player {
+    res.push_back(Bet{
+        token: player_bet.token.clone(),
+        amount: returned_amount,
+        paid: true
+    });
+
+
+    if has_winner(env) && get_winner(env) == player && profit > 0 {
         let diff = player_bet.amount - returned_amount;
-        pay(env, &player, opponent_bet.token, profit + diff);
+        pay(env, &player, opponent_bet.token.clone(), profit + diff);
+
+        res.push_back(Bet{
+            token: opponent_bet.token.clone(),
+            amount: profit + diff,
+            paid: true
+        });
     }
 
     bet.paid = true;
     set_bet(env, player, bet);
+
+    res
 }
 
 fn pay(env: &Env, to: &Address, token: BytesN<32>, amount: i128) {
