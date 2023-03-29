@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use crate::{Deployer, DeployerClient};
-use soroban_sdk::{testutils::Address as _, Address, Bytes, BytesN, Env, IntoVal};
+use soroban_sdk::{testutils::Address as _, vec, Address, Bytes, BytesN, Env, IntoVal, Vec};
 
 // The contract that will be deployed by the deployer contract.
 mod contract {
@@ -48,14 +48,14 @@ impl GameTest {
 #[test]
 fn test_deploy() {
     let GameTest {
-        env:_,
+        env: _,
         deployer_client: _,
         player_a,
         player_b,
-        contract_id:_,
+        contract_id: _,
         game_client,
-    }  = GameTest::setup();
-    
+    } = GameTest::setup();
+
     assert_eq!(game_client.player_a(), player_a);
     assert_eq!(game_client.player_b(), player_b);
 }
@@ -63,13 +63,13 @@ fn test_deploy() {
 #[test]
 fn test_get_game() {
     let GameTest {
-        env:_,
+        env: _,
         deployer_client,
         player_a,
         player_b,
         contract_id,
-        game_client:_,
-    }  = GameTest::setup();
+        game_client: _,
+    } = GameTest::setup();
 
     let game = crate::Game {
         player_a,
@@ -89,8 +89,8 @@ fn test_set_ended() {
         player_a,
         player_b,
         contract_id,
-        game_client:_,
-    }  = GameTest::setup();
+        game_client: _,
+    } = GameTest::setup();
 
     let mut game = crate::Game {
         player_a: player_a.clone(),
@@ -109,4 +109,52 @@ fn test_set_ended() {
 
     game.ended = true;
     assert_eq!(deployer_client.game(&contract_id), game);
+}
+
+#[test]
+fn test_scores() {
+    let GameTest {
+        env,
+        deployer_client,
+        player_a: _,
+        player_b: _,
+        contract_id: _,
+        game_client: _,
+    } = GameTest::setup();
+
+    let exp = vec![&env];
+    assert_eq!(deployer_client.scores(), exp);
+}
+
+#[test]
+fn test_scores_add_win() {
+    let GameTest {
+        env,
+        deployer_client,
+        player_a,
+        player_b,
+        contract_id,
+        game_client: _,
+    } = GameTest::setup();
+
+    let mut game = crate::Game {
+        player_a: player_a.clone(),
+        player_b: player_b.clone(),
+        ended: false,
+    };
+
+    assert_eq!(deployer_client.game(&contract_id), game);
+
+    let game_client = contract::Client::new(&env, &contract_id);
+    game_client.play(&player_a, &0, &0);
+    game_client.play(&player_b, &0, &1);
+    game_client.play(&player_a, &1, &0);
+    game_client.play(&player_b, &1, &1);
+    game_client.play(&player_a, &2, &0);
+
+    game.ended = true;
+    assert_eq!(deployer_client.game(&contract_id), game);
+
+    let exp = Vec::from_array(&env, [(player_a, 1)]);
+    assert_eq!(deployer_client.scores(), exp);
 }
