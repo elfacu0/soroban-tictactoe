@@ -30,6 +30,10 @@ impl GameContract {
         game::get_player_b(&env)
     }
 
+    pub fn has_winner(env: Env) -> bool {
+        game::has_winner(&env)
+    }
+
     pub fn winner(env: Env) -> Address {
         game::winner(env)
     }
