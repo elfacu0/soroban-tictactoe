@@ -1,9 +1,11 @@
 #![cfg(test)]
 
+use crate::chat::Message;
+
 use super::{Bet, GameContract, GameContractClient};
 use soroban_sdk::testutils::{Ledger, LedgerInfo};
-use soroban_sdk::Vec;
 use soroban_sdk::{symbol, testutils::Address as _, vec, Address, Env};
+use soroban_sdk::{Bytes, Vec};
 
 struct GameTest {
     env: Env,
@@ -644,4 +646,70 @@ fn test_no_collect_twice() {
     client.clct_bet(&player_a);
     assert_eq!(token.balance(&player_a), 1100);
     client.clct_bet(&player_a);
+}
+
+#[test]
+fn test_empty_chat() {
+    let GameTest {
+        env,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
+
+    client.init(&player_a, &player_b, &expiration);
+
+    assert_eq!(client.chat(), vec![&env]);
+}
+
+#[test]
+fn test_send_message() {
+    let GameTest {
+        env,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
+
+    client.init(&player_a, &player_b, &expiration);
+
+    let body: [u8; 5] = "Hello".as_bytes().try_into().unwrap();
+    let msg = Message {
+        author: player_a,
+        body: Bytes::from_array(&env, &body),
+    };
+    client.send_msg(&msg.author, &msg.body);
+
+    assert_eq!(client.chat(), vec![&env, msg]);
+}
+
+#[test]
+fn test_send_messages() {
+    let GameTest {
+        env,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
+
+    client.init(&player_a, &player_b, &expiration);
+
+    let body: [u8; 5] = "Hello".as_bytes().try_into().unwrap();
+    let msg = Message {
+        author: player_a,
+        body: Bytes::from_array(&env, &body),
+    };
+    client.send_msg(&msg.author, &msg.body);
+
+    let body2: [u8; 2] = "NO".as_bytes().try_into().unwrap();
+    let msg2 = Message {
+        author: player_b,
+        body: Bytes::from_array(&env, &body2),
+    };
+    client.send_msg(&msg2.author, &msg2.body);
+
+    assert_eq!(client.chat(), vec![&env, msg, msg2]);
 }
