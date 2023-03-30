@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use crate::{Deployer, DeployerClient};
-use soroban_sdk::{testutils::Address as _, vec, Address, Bytes, BytesN, Env, IntoVal, Vec};
+use soroban_sdk::{map, testutils::Address as _, Address, Bytes, BytesN, Env, IntoVal};
 
 // The contract that will be deployed by the deployer contract.
 mod contract {
@@ -134,7 +134,7 @@ fn test_scores() {
         game_client: _,
     } = GameTest::setup();
 
-    let exp = vec![&env];
+    let exp = map![&env];
     assert_eq!(deployer_client.scores(), exp);
 }
 
@@ -162,7 +162,7 @@ fn test_scores_add_win() {
     game.ended = true;
     assert_eq!(deployer_client.game(&contract_id), game);
 
-    let exp = Vec::from_array(&env, [(player_a, 1)]);
+    let exp = map![&env, (player_a, 1)];
     assert_eq!(deployer_client.scores(), exp);
 }
 
@@ -182,7 +182,7 @@ fn test_scores_add_wins() {
     make_player_a_win(&game2, game_test.player_a.clone(), game_test.player_b);
     game_test.deployer_client.game(&game2.contract_id);
 
-    let exp = Vec::from_array(&game_test.env, [(game_test.player_a, 2)]);
+    let exp = map![&game_test.env, (game_test.player_a, 2)];
     assert_eq!(game_test.deployer_client.scores(), exp);
 }
 
@@ -207,9 +207,10 @@ fn test_scores_add_wins_2() {
     );
     game_test.deployer_client.game(&game2.contract_id);
 
-    let exp = Vec::from_array(
+    let exp = map![
         &game_test.env,
-        [(game_test.player_a, 1), (game_test.player_b, 1)],
-    );
+        (game_test.player_a, 1),
+        (game_test.player_b, 1),
+    ];
     assert_eq!(game_test.deployer_client.scores(), exp);
 }

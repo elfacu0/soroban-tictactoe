@@ -1,6 +1,6 @@
 #![no_std]
 use soroban_sdk::{
-    contractimpl, contracttype, symbol, vec, Address, Bytes, BytesN, Env, IntoVal, RawVal, Vec,
+    contractimpl, contracttype, map, symbol, Address, Bytes, BytesN, Env, IntoVal, Map, RawVal, Vec,
 };
 
 mod game_contract {
@@ -61,7 +61,7 @@ impl Deployer {
         game
     }
 
-    pub fn scores(env: Env) -> Vec<(Address, u32)> {
+    pub fn scores(env: Env) -> Map<Address, u32> {
         get_scores(&env)
     }
 }
@@ -100,8 +100,8 @@ fn add_exp(env: &Env, init_args: Vec<RawVal>) -> Vec<RawVal> {
     init_args_exp
 }
 
-fn get_scores(env: &Env) -> Vec<(Address, u32)> {
-    let default = vec![env];
+fn get_scores(env: &Env) -> Map<Address, u32> {
+    let default = map![env];
     env.storage()
         .get(&DataKey::Scores)
         .unwrap_or(Ok(default))
@@ -115,20 +115,16 @@ fn add_win(env: &Env, player: Address) {
 
 fn get_score(env: &Env, player: Address) -> u32 {
     let scores = get_scores(env);
-    let score = scores.iter().find(|x| x.as_ref().unwrap().0 == player);
+    let score = scores.get(player);
     match score {
-        Some(val) => val.unwrap().1,
+        Some(val) => val.unwrap(),
         _ => 0,
     }
 }
 
 fn set_score(env: &Env, player: Address, score: u32) {
     let mut scores = get_scores(env);
-    let index = scores.iter().position(|x| x.as_ref().unwrap().0 == player);
-    match index {
-        Some(i) => scores.set(i.try_into().unwrap(), (player, score)),
-        _ => scores.push_back((player, score)),
-    }
+    scores.set(player, score);
     env.storage().set(&DataKey::Scores, &scores);
 }
 
