@@ -1,11 +1,11 @@
 use crate::storage::DataKey;
-use soroban_sdk::{contracttype, vec, Address, Bytes, Env, Vec};
+use soroban_sdk::{contracttype, vec, Address, Env, Symbol, Vec};
 
 #[derive(Clone, Debug)]
 #[contracttype]
 pub struct Message {
     pub author: Address,
-    pub body: Bytes,
+    pub body: Symbol,
 }
 
 pub fn get_chats(env: &Env) -> Vec<Message> {
@@ -15,7 +15,7 @@ pub fn get_chats(env: &Env) -> Vec<Message> {
         .unwrap()
 }
 
-pub fn add_msg(env: &Env, player: Address, message: Bytes) -> Message {
+pub fn add_msg(env: &Env, player: Address, message: Symbol) -> Message {
     player.require_auth();
 
     let mut chats = get_chats(env);

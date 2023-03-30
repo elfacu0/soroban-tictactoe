@@ -5,7 +5,7 @@ use crate::chat::Message;
 use super::{Bet, GameContract, GameContractClient};
 use soroban_sdk::testutils::{Ledger, LedgerInfo};
 use soroban_sdk::{symbol, testutils::Address as _, vec, Address, Env};
-use soroban_sdk::{Bytes, Vec};
+use soroban_sdk::{Symbol, Vec};
 
 struct GameTest {
     env: Env,
@@ -675,10 +675,9 @@ fn test_send_message() {
 
     client.init(&player_a, &player_b, &expiration);
 
-    let body: [u8; 5] = "Hello".as_bytes().try_into().unwrap();
     let msg = Message {
         author: player_a,
-        body: Bytes::from_array(&env, &body),
+        body: symbol!("Hello"),
     };
     client.send_msg(&msg.author, &msg.body);
 
@@ -697,17 +696,15 @@ fn test_send_messages() {
 
     client.init(&player_a, &player_b, &expiration);
 
-    let body: [u8; 5] = "Hello".as_bytes().try_into().unwrap();
     let msg = Message {
         author: player_a,
-        body: Bytes::from_array(&env, &body),
+        body: symbol!("Hello"),
     };
     client.send_msg(&msg.author, &msg.body);
 
-    let body2: [u8; 2] = "NO".as_bytes().try_into().unwrap();
     let msg2 = Message {
         author: player_b,
-        body: Bytes::from_array(&env, &body2),
+        body: symbol!("No"),
     };
     client.send_msg(&msg2.author, &msg2.body);
 

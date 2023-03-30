@@ -1,7 +1,7 @@
 #![no_std]
 use crate::bet::Bet;
 use crate::chat::Message;
-use soroban_sdk::{contractimpl, Address, Bytes, BytesN, Env, Symbol, Vec};
+use soroban_sdk::{contractimpl, Address, BytesN, Env, Symbol, Vec};
 
 mod bet;
 mod chat;
@@ -56,7 +56,7 @@ impl GameContract {
         bet::collect(&env, player)
     }
 
-    pub fn send_msg(env: Env, player: Address, message: Bytes) -> Message {
+    pub fn send_msg(env: Env, player: Address, message: Symbol) -> Message {
         chat::add_msg(&env, player, message)
     }
 
