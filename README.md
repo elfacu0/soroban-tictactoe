@@ -83,6 +83,16 @@ Arguments:
     player: Address, 
 ```
 
+### Send Message
+Players can interact with each other through a chat feature. To send a message, a player must call the `send_msg` function with the following arguments.
+```
+Arguments:
+    player: Address, 
+    message: Bytes
+```
+
+### Chat
+To view all previous messages in the chat, call the `chat` function without any argument.
 
 <br/>
 
