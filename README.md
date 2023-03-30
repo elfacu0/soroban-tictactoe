@@ -88,7 +88,7 @@ Players can interact with each other through a chat feature. To send a message, 
 ```
 Arguments:
     player: Address, 
-    message: Bytes
+    message: Symbol
 ```
 
 ### Chat
