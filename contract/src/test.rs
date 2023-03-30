@@ -4,8 +4,7 @@ use crate::chat::Message;
 
 use super::{Bet, GameContract, GameContractClient};
 use soroban_sdk::testutils::{Ledger, LedgerInfo};
-use soroban_sdk::{symbol, testutils::Address as _, vec, Address, Env};
-use soroban_sdk::{Symbol, Vec};
+use soroban_sdk::{symbol, testutils::Address as _, vec, Address, Env, Vec};
 
 struct GameTest {
     env: Env,
