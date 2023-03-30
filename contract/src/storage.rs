@@ -11,4 +11,5 @@ pub enum DataKey {
     Expiration,
     BetPlayerA,
     BetPlayerB,
+    Chats,
 }

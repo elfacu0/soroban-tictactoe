@@ -1,8 +1,10 @@
 #![no_std]
 use crate::bet::Bet;
-use soroban_sdk::{contractimpl, Address, BytesN, Env, Symbol, Vec};
+use crate::chat::Message;
+use soroban_sdk::{contractimpl, Address, Bytes, BytesN, Env, Symbol, Vec};
 
 mod bet;
+mod chat;
 mod game;
 mod storage;
 
@@ -52,6 +54,14 @@ impl GameContract {
 
     pub fn clct_bet(env: Env, player: Address) -> Vec<Bet> {
         bet::collect(&env, player)
+    }
+
+    pub fn send_msg(env: Env, player: Address, message: Bytes) -> Message {
+        chat::add_msg(&env, player, message)
+    }
+
+    pub fn chat(env: Env) -> Vec<Message> {
+        chat::get_chats(&env)
     }
 }
 
