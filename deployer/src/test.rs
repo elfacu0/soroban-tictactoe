@@ -200,9 +200,16 @@ fn test_scores_add_wins_2() {
 
     let game2 = game_test.deploy_new_game(Bytes::from_array(&game_test.env, &[2; 32]));
     game2.play(&game_test.player_a, &2, &2);
-    make_player_a_win(&game2, game_test.player_b.clone(), game_test.player_a.clone());
+    make_player_a_win(
+        &game2,
+        game_test.player_b.clone(),
+        game_test.player_a.clone(),
+    );
     game_test.deployer_client.game(&game2.contract_id);
 
-    let exp = Vec::from_array(&game_test.env, [(game_test.player_a, 1),(game_test.player_b, 1)]);
+    let exp = Vec::from_array(
+        &game_test.env,
+        [(game_test.player_a, 1), (game_test.player_b, 1)],
+    );
     assert_eq!(game_test.deployer_client.scores(), exp);
 }
