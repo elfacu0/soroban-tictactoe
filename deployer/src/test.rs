@@ -43,6 +43,25 @@ impl GameTest {
             game_client,
         }
     }
+
+    fn deploy_new_game(&self, salt: Bytes) -> contract::Client {
+        let wasm_hash = self.env.install_contract_wasm(contract::WASM);
+
+        let init_fn_args = (self.player_a.clone(), self.player_b.clone()).into_val(&self.env);
+        let contract_id = self
+            .deployer_client
+            .deploy(&salt, &wasm_hash, &init_fn_args);
+
+        contract::Client::new(&self.env, &contract_id)
+    }
+}
+
+fn make_player_a_win(client: &contract::Client, player_a: Address, player_b: Address) {
+    client.play(&player_a, &0, &0);
+    client.play(&player_b, &0, &1);
+    client.play(&player_a, &1, &0);
+    client.play(&player_b, &1, &1);
+    client.play(&player_a, &2, &0);
 }
 
 #[test]
@@ -84,12 +103,12 @@ fn test_get_game() {
 #[test]
 fn test_set_ended() {
     let GameTest {
-        env,
+        env: _,
         deployer_client,
         player_a,
         player_b,
         contract_id,
-        game_client: _,
+        game_client,
     } = GameTest::setup();
 
     let mut game = crate::Game {
@@ -99,14 +118,7 @@ fn test_set_ended() {
     };
 
     assert_eq!(deployer_client.game(&contract_id), game);
-
-    let game_client = contract::Client::new(&env, &contract_id);
-    game_client.play(&player_a, &0, &0);
-    game_client.play(&player_b, &0, &1);
-    game_client.play(&player_a, &1, &0);
-    game_client.play(&player_b, &1, &1);
-    game_client.play(&player_a, &2, &0);
-
+    make_player_a_win(&game_client, player_a, player_b);
     game.ended = true;
     assert_eq!(deployer_client.game(&contract_id), game);
 }
@@ -134,7 +146,7 @@ fn test_scores_add_win() {
         player_a,
         player_b,
         contract_id,
-        game_client: _,
+        game_client,
     } = GameTest::setup();
 
     let mut game = crate::Game {
@@ -145,16 +157,52 @@ fn test_scores_add_win() {
 
     assert_eq!(deployer_client.game(&contract_id), game);
 
-    let game_client = contract::Client::new(&env, &contract_id);
-    game_client.play(&player_a, &0, &0);
-    game_client.play(&player_b, &0, &1);
-    game_client.play(&player_a, &1, &0);
-    game_client.play(&player_b, &1, &1);
-    game_client.play(&player_a, &2, &0);
+    make_player_a_win(&game_client, player_a.clone(), player_b);
 
     game.ended = true;
     assert_eq!(deployer_client.game(&contract_id), game);
 
     let exp = Vec::from_array(&env, [(player_a, 1)]);
     assert_eq!(deployer_client.scores(), exp);
+}
+
+#[test]
+fn test_scores_add_wins() {
+    let game_test = GameTest::setup();
+
+    let game1 = game_test.deploy_new_game(Bytes::from_array(&game_test.env, &[1; 32]));
+    make_player_a_win(
+        &game1,
+        game_test.player_a.clone(),
+        game_test.player_b.clone(),
+    );
+    game_test.deployer_client.game(&game1.contract_id);
+
+    let game2 = game_test.deploy_new_game(Bytes::from_array(&game_test.env, &[2; 32]));
+    make_player_a_win(&game2, game_test.player_a.clone(), game_test.player_b);
+    game_test.deployer_client.game(&game2.contract_id);
+
+    let exp = Vec::from_array(&game_test.env, [(game_test.player_a, 2)]);
+    assert_eq!(game_test.deployer_client.scores(), exp);
+}
+
+#[test]
+fn test_scores_add_wins_2() {
+    let game_test = GameTest::setup();
+
+    let game1 = game_test.deploy_new_game(Bytes::from_array(&game_test.env, &[1; 32]));
+    make_player_a_win(
+        &game1,
+        game_test.player_a.clone(),
+        game_test.player_b.clone(),
+    );
+    game_test.deployer_client.game(&game1.contract_id);
+
+    let game2 = game_test.deploy_new_game(Bytes::from_array(&game_test.env, &[2; 32]));
+    game2.play(&game_test.player_a, &2, &2);
+    make_player_a_win(&game2, game_test.player_b.clone(), game_test.player_a.clone());
+    game_test.deployer_client.game(&game2.contract_id);
+
+    let exp = Vec::from_array(&game_test.env, [(game_test.player_a, 1),(game_test.player_b, 1)]);
+    assert_eq!(game_test.deployer_client.scores(), exp);
 }
