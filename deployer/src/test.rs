@@ -3,7 +3,7 @@
 use crate::{Deployer, DeployerClient};
 use soroban_sdk::{map, testutils::Address as _, Address, Bytes, BytesN, Env, IntoVal};
 
-// The contract that will be deployed by the deployer contract.
+// The contract that will be deployed by t  he deployer contract.
 mod contract {
     soroban_sdk::contractimport!(
         file = "../target/wasm32-unknown-unknown/release/tictactoe_game.wasm"

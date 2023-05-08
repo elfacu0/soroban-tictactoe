@@ -1,5 +1,5 @@
 use crate::storage::DataKey;
-use soroban_sdk::{symbol, vec, Address, Env, Symbol, Vec};
+use soroban_sdk::{vec, Address, Env, Symbol, Vec};
 
 pub fn init(env: Env, player_a: Address, player_b: Address, expiration: u64) {
     assert!(!has_players(&env), "Already initialized");
@@ -25,9 +25,9 @@ pub fn play(env: Env, player: Address, pos_x: u32, pos_y: u32) -> Vec<Symbol> {
 }
 
 pub fn grid(env: Env) -> Vec<Symbol> {
-    let empty = symbol!("");
-    let x = symbol!("X");
-    let o = symbol!("O");
+    let empty = Symbol::short("");
+    let x = Symbol::short("X");
+    let o = Symbol::short("O");
     let mut res = vec![&env];
     let mut pointer = 0b110000000000000000;
     let curr_grid = get_grid(&env);

@@ -1,11 +1,11 @@
 #![no_std]
 use soroban_sdk::{
-    contractimpl, contracttype, map, symbol, Address, Bytes, BytesN, Env, IntoVal, Map, RawVal, Vec,
+    contractimpl, contracttype, map, Address, Bytes, BytesN, Env, IntoVal, Map, RawVal, Vec, Symbol,
 };
 
 mod game_contract {
     soroban_sdk::contractimport!(
-        file = "../target/wasm32-unknown-unknown/release/tictactoe_game.wasm"
+        file = "../game/tictactoe_game.wasm"
     );
 }
 
@@ -37,7 +37,7 @@ impl Deployer {
             .deployer()
             .with_current_contract(&salt)
             .deploy(&wasm_hash);
-        let init_fn = symbol!("init");
+        let init_fn = Symbol::short("init");
 
         let _: RawVal = env.invoke_contract(&id, &init_fn, add_exp(&env, init_args.clone()));
         let game = create_game(&env, &init_args);

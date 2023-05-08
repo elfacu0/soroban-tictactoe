@@ -3,8 +3,9 @@
 use crate::chat::Message;
 
 use super::{Bet, GameContract, GameContractClient};
+use soroban_sdk::Symbol;
 use soroban_sdk::testutils::{Ledger, LedgerInfo};
-use soroban_sdk::{symbol, testutils::Address as _, vec, Address, Env, Vec};
+use soroban_sdk::{testutils::Address as _, vec, Address, Env, Vec};
 
 struct GameTest {
     env: Env,
@@ -317,9 +318,9 @@ fn test_grid() {
         client,
     } = GameTest::setup();
 
-    let empty = symbol!("");
-    let x = symbol!("X");
-    let o = symbol!("O");
+    let empty = Symbol::short("");
+    let x = Symbol::short("X");
+    let o = Symbol::short("O");
     let mut grid = vec![
         &env,
         empty.clone(),
@@ -676,7 +677,7 @@ fn test_send_message() {
 
     let msg = Message {
         author: player_a,
-        body: symbol!("Hello"),
+        body: Symbol::short("Hello"),
     };
     client.send_msg(&msg.author, &msg.body);
 
@@ -697,13 +698,13 @@ fn test_send_messages() {
 
     let msg = Message {
         author: player_a,
-        body: symbol!("Hello"),
+        body: Symbol::short("Hello"),
     };
     client.send_msg(&msg.author, &msg.body);
 
     let msg2 = Message {
         author: player_b,
-        body: symbol!("No"),
+        body: Symbol::short("No"),
     };
     client.send_msg(&msg2.author, &msg2.body);
 
