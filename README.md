@@ -136,11 +136,11 @@ Then you can deploy the manager with
 soroban contract invoke \
     --wasm target/wasm32-unknown-unknown/release/tictactoe_manager.wasm \
     --id 0 \
-    --fn deploy \
     -- \
+    deploy \
     --salt 0000000000000000000000000000000000000000000000000000000000000000 \
     --wasm_hash 48a67a58d5d3d777a228aa99c4560fc2f3ebf6e0e56a39709a711b12929d5d51 \
-    --init_args '[{"object":{"address":{"account":{"public_key_type_ed25519":"5b26bf4596c86e7dc0fa64d7784fb287058801fc548fc5d0c9a44be08c083de8"}}}}, {"object":{"address":{"account":{"public_key_type_ed25519":"6e368450016cac667ec57347d70c25a83f399d6803442d031545b89457936c42"}}}}]'
+    --init_args '[{"address":{"account":{"public_key_type_ed25519":"5b26bf4596c86e7dc0fa64d7784fb287058801fc548fc5d0c9a44be08c083de8"}}},{"address":{"account":{"public_key_type_ed25519":"6e368450016cac667ec57347d70c25a83f399d6803442d031545b89457936c42"}}}]'
 ```
 
 Inside `init_args` the first element is player_a and the second player_b, public_key_type_ed25519 must contain the address in hex
