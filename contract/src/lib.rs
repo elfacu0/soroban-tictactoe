@@ -1,13 +1,14 @@
 #![no_std]
 use crate::bet::Bet;
 use crate::chat::Message;
-use soroban_sdk::{contractimpl, Address, BytesN, Env, Symbol, Vec};
+use soroban_sdk::{contract, contractimpl, Address, Env, Symbol, Vec};
 
 mod bet;
 mod chat;
 mod game;
 mod storage;
 
+#[contract]
 pub struct GameContract;
 
 #[contractimpl]
@@ -48,7 +49,7 @@ impl GameContract {
         game::grid(env)
     }
 
-    pub fn bet(env: Env, player: Address, token: BytesN<32>, amount: i128) -> Bet {
+    pub fn bet(env: Env, player: Address, token: Address, amount: i128) -> Bet {
         bet::make(&env, player, token, amount)
     }
 

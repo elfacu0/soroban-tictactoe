@@ -1,5 +1,5 @@
 use crate::storage::DataKey;
-use soroban_sdk::{vec, Address, Env, Symbol, Vec};
+use soroban_sdk::{symbol_short, vec, Address, Env, Symbol, Vec};
 
 pub fn init(env: Env, player_a: Address, player_b: Address, expiration: u64) {
     assert!(!has_players(&env), "Already initialized");
@@ -25,18 +25,18 @@ pub fn play(env: Env, player: Address, pos_x: u32, pos_y: u32) -> Vec<Symbol> {
 }
 
 pub fn grid(env: Env) -> Vec<Symbol> {
-    let empty = Symbol::short("");
-    let x = Symbol::short("X");
-    let o = Symbol::short("O");
+    const EMPTY: Symbol = symbol_short!("");
+    const X: Symbol = symbol_short!("X");
+    const O: Symbol = symbol_short!("O");
     let mut res = vec![&env];
     let mut pointer = 0b110000000000000000;
     let curr_grid = get_grid(&env);
     let mut offset = 16;
     for _ in 0..9 {
         match (curr_grid & pointer) >> offset {
-            1 => res.push_back(x.clone()),
-            2 => res.push_back(o.clone()),
-            _ => res.push_back(empty.clone()),
+            1 => res.push_back(X.clone()),
+            2 => res.push_back(O.clone()),
+            _ => res.push_back(EMPTY.clone()),
         }
         pointer >>= 2;
         offset -= 2;
@@ -50,45 +50,51 @@ pub fn winner(env: Env) -> Address {
 }
 
 fn has_players(env: &Env) -> bool {
-    env.storage().has(&DataKey::PlayerA) && env.storage().has(&DataKey::PlayerB)
+    env.storage().instance().has(&DataKey::PlayerA)
+        && env.storage().instance().has(&DataKey::PlayerB)
 }
 
 fn set_players(env: &Env, player_a: &Address, player_b: &Address) {
-    env.storage().set(&DataKey::PlayerA, player_a);
-    env.storage().set(&DataKey::PlayerB, player_b);
+    env.storage().instance().set(&DataKey::PlayerA, player_a);
+    env.storage().instance().set(&DataKey::PlayerB, player_b);
 
-    env.storage().set(&DataKey::PlayerTurn, player_a);
+    env.storage().instance().set(&DataKey::PlayerTurn, player_a);
 }
 
 pub fn get_player_a(env: &Env) -> Address {
-    env.storage().get(&DataKey::PlayerA).unwrap().unwrap()
+    env.storage().instance().get(&DataKey::PlayerA).unwrap()
 }
 
 pub fn get_player_b(env: &Env) -> Address {
-    env.storage().get(&DataKey::PlayerB).unwrap().unwrap()
+    env.storage().instance().get(&DataKey::PlayerB).unwrap()
 }
 
 pub fn get_player_turn(env: &Env) -> Address {
-    env.storage().get(&DataKey::PlayerTurn).unwrap().unwrap()
+    env.storage().instance().get(&DataKey::PlayerTurn).unwrap()
 }
 
 fn change_turn(env: &Env) {
     match get_player_turn(env) == get_player_a(env) {
         true => env
             .storage()
+            .instance()
             .set(&DataKey::PlayerTurn, &(get_player_b(env))),
         false => env
             .storage()
+            .instance()
             .set(&DataKey::PlayerTurn, &(get_player_a(env))),
     }
 }
 
 pub fn get_grid(env: &Env) -> u32 {
-    env.storage().get(&DataKey::Grid).unwrap_or(Ok(0)).unwrap()
+    env.storage()
+        .instance()
+        .get(&DataKey::Grid)
+        .unwrap_or(0)
 }
 
 fn set_grid(env: &Env, grid: u32) {
-    env.storage().set(&DataKey::Grid, &grid)
+    env.storage().instance().set(&DataKey::Grid, &grid)
 }
 
 // 00 00 00 00 00 00 00 || 00 00 00 00 00 00 00 00 00 => x-y
@@ -123,27 +129,35 @@ fn mark_cell(env: &Env, pos_x: u32, pos_y: u32) {
 }
 
 fn get_time(env: &Env) -> u32 {
-    env.storage().get(&DataKey::Time).unwrap_or(Ok(0)).unwrap()
+    env.storage()
+        .instance()
+        .get(&DataKey::Time)
+        .unwrap_or(0)
 }
 
 fn increase_time(env: &Env) {
-    env.storage().set(&DataKey::Time, &(get_time(env) + 1))
+    env.storage()
+        .instance()
+        .set(&DataKey::Time, &(get_time(env) + 1))
 }
 
 pub fn has_ended(env: &Env) -> bool {
-    env.storage().has(&DataKey::Winner) || get_time(env) >= 9 || is_expired(env)
+    env.storage().instance().has(&DataKey::Winner) || get_time(env) >= 9 || is_expired(env)
 }
 
 pub fn has_winner(env: &Env) -> bool {
-    env.storage().has(&DataKey::Winner)
+    env.storage().instance().has(&DataKey::Winner)
 }
 
 pub fn get_winner(env: &Env) -> Address {
-    env.storage().get(&DataKey::Winner).unwrap().unwrap()
+    env.storage()
+        .instance()
+        .get(&DataKey::Winner)
+        .unwrap()
 }
 
 fn set_winner(env: &Env, winner: Address) {
-    env.storage().set(&DataKey::Winner, &winner)
+    env.storage().instance().set(&DataKey::Winner, &winner)
 }
 
 fn check_winner(env: &Env) {
@@ -180,13 +194,15 @@ fn allowed_player(env: &Env, player: Address) -> bool {
 
 fn get_expiration(env: &Env) -> u64 {
     env.storage()
+        .instance()
         .get(&DataKey::Expiration)
-        .unwrap_or(Ok(0))
-        .unwrap()
+        .unwrap_or(0)
 }
 
 fn set_expiration(env: &Env, expiration: u64) {
-    env.storage().set(&DataKey::Expiration, &expiration);
+    env.storage()
+        .instance()
+        .set(&DataKey::Expiration, &expiration);
 }
 
 fn is_expired(env: &Env) -> bool {

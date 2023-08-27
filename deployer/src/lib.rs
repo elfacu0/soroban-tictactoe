@@ -1,12 +1,11 @@
 #![no_std]
 use soroban_sdk::{
-    contractimpl, contracttype, map, Address, Bytes, BytesN, Env, IntoVal, Map, RawVal, Vec, Symbol,
+    contract, contractimpl, contracttype, map, symbol_short, Address, BytesN, Env, IntoVal, Map,
+    Symbol, Val, Vec,
 };
 
 mod game_contract {
-    soroban_sdk::contractimport!(
-        file = "../game/tictactoe_game.wasm"
-    );
+    soroban_sdk::contractimport!(file = "../game/tictactoe_game.wasm");
 }
 
 #[contracttype]
@@ -19,33 +18,36 @@ pub struct Game {
 
 #[contracttype]
 pub enum DataKey {
-    Games(BytesN<32>),
+    Games(Address),
     Scores,
 }
 
+#[contract]
 pub struct Deployer;
 
 #[contractimpl]
 impl Deployer {
     pub fn deploy(
         env: Env,
-        salt: Bytes,
+        salt: BytesN<32>,
         wasm_hash: BytesN<32>,
-        init_args: Vec<RawVal>,
-    ) -> BytesN<32> {
-        let id = env
-            .deployer()
-            .with_current_contract(&salt)
-            .deploy(&wasm_hash);
-        let init_fn = Symbol::short("init");
+        init_args: Vec<Val>,
+    ) -> Address {
+        const INIT_FN: Symbol = symbol_short!("init");
+        let deployed_address = env.deployer().with_current_contract(salt).deploy(wasm_hash);
+        let _: Val = env.invoke_contract(
+            &deployed_address,
+            &INIT_FN,
+            add_exp(&env, init_args.clone()),
+        );
 
-        let _: RawVal = env.invoke_contract(&id, &init_fn, add_exp(&env, init_args.clone()));
         let game = create_game(&env, &init_args);
-        set_game(&env, &id, game);
-        id
+        set_game(&env, &deployed_address, game);
+
+        deployed_address
     }
 
-    pub fn game(env: Env, id: BytesN<32>) -> Game {
+    pub fn game(env: Env, id: Address) -> Game {
         assert!(has_game(&env, &id), "Game doesn't exist");
         let mut game = get_game(&env, &id);
         if !game.ended {
@@ -66,19 +68,19 @@ impl Deployer {
     }
 }
 
-fn has_game(env: &Env, id: &BytesN<32>) -> bool {
+fn has_game(env: &Env, id: &Address) -> bool {
     let key = DataKey::Games(id.clone());
-    env.storage().has(&key)
+    env.storage().instance().has(&key)
 }
 
-fn get_game(env: &Env, id: &BytesN<32>) -> Game {
+fn get_game(env: &Env, id: &Address) -> Game {
     let key = DataKey::Games(id.clone());
-    env.storage().get(&key).unwrap().unwrap()
+    env.storage().instance().get(&key).unwrap()
 }
 
-fn create_game(env: &Env, init_args: &Vec<RawVal>) -> Game {
-    let player_a = init_args.get(0).unwrap().unwrap().into_val(env);
-    let player_b = init_args.get(1).unwrap().unwrap().into_val(env);
+fn create_game(env: &Env, init_args: &Vec<Val>) -> Game {
+    let player_a = init_args.get(0).unwrap().into_val(env);
+    let player_b = init_args.get(1).unwrap().into_val(env);
     let game = Game {
         player_a,
         player_b,
@@ -87,12 +89,12 @@ fn create_game(env: &Env, init_args: &Vec<RawVal>) -> Game {
     game
 }
 
-fn set_game(env: &Env, id: &BytesN<32>, game: Game) {
+fn set_game(env: &Env, id: &Address, game: Game) {
     let key = DataKey::Games(id.clone());
-    env.storage().set(&key, &game)
+    env.storage().instance().set(&key, &game)
 }
 
-fn add_exp(env: &Env, init_args: Vec<RawVal>) -> Vec<RawVal> {
+fn add_exp(env: &Env, init_args: Vec<Val>) -> Vec<Val> {
     let duration = 60 * 10;
     let expiration = env.ledger().timestamp() + duration;
     let mut init_args_exp = init_args;
@@ -103,9 +105,9 @@ fn add_exp(env: &Env, init_args: Vec<RawVal>) -> Vec<RawVal> {
 fn get_scores(env: &Env) -> Map<Address, u32> {
     let default = map![env];
     env.storage()
+        .instance()
         .get(&DataKey::Scores)
-        .unwrap_or(Ok(default))
-        .unwrap()
+        .unwrap_or(default)
 }
 
 fn add_win(env: &Env, player: Address) {
@@ -117,7 +119,7 @@ fn get_score(env: &Env, player: Address) -> u32 {
     let scores = get_scores(env);
     let score = scores.get(player);
     match score {
-        Some(val) => val.unwrap(),
+        Some(val) => val,
         _ => 0,
     }
 }
@@ -125,7 +127,7 @@ fn get_score(env: &Env, player: Address) -> u32 {
 fn set_score(env: &Env, player: Address, score: u32) {
     let mut scores = get_scores(env);
     scores.set(player, score);
-    env.storage().set(&DataKey::Scores, &scores);
+    env.storage().instance().set(&DataKey::Scores, &scores);
 }
 
 mod test;

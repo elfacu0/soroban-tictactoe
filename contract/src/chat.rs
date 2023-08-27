@@ -10,9 +10,9 @@ pub struct Message {
 
 pub fn get_chats(env: &Env) -> Vec<Message> {
     env.storage()
+        .instance()
         .get(&DataKey::Chats)
-        .unwrap_or(Ok(vec![env]))
-        .unwrap()
+        .unwrap_or(vec![env])
 }
 
 pub fn add_msg(env: &Env, player: Address, message: Symbol) -> Message {
@@ -24,6 +24,6 @@ pub fn add_msg(env: &Env, player: Address, message: Symbol) -> Message {
         body: message,
     };
     chats.push_back(msg.clone());
-    env.storage().set(&DataKey::Chats, &chats);
+    env.storage().instance().set(&DataKey::Chats, &chats);
     msg
 }
