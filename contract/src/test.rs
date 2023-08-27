@@ -2,13 +2,11 @@
 
 use crate::chat::Message;
 use soroban_sdk::symbol_short;
-use token::AdminClient as TokenAdminClient;
-use token::Client as TokenClient;
 
-use super::{Bet, GameContract, GameContractClient};
+use super::{GameContract, GameContractClient};
 use soroban_sdk::testutils::{Ledger, LedgerInfo};
 use soroban_sdk::Symbol;
-use soroban_sdk::{testutils::Address as _, token, vec, Address, Env, Vec};
+use soroban_sdk::{testutils::Address as _, vec, Address, Env};
 
 struct GameTest<'a> {
     env: Env,
@@ -58,14 +56,6 @@ impl GameTest<'_> {
         client.play(&player_b, &1, &1);
         client.play(&player_a, &2, &0);
     }
-}
-
-fn create_token_contract<'a>(e: &Env, admin: &Address) -> (TokenClient<'a>, TokenAdminClient<'a>) {
-    let contract_address = e.register_stellar_asset_contract(admin.clone());
-    (
-        TokenClient::new(e, &contract_address),
-        TokenAdminClient::new(e, &contract_address),
-    )
 }
 
 #[test]
@@ -373,346 +363,65 @@ fn test_expired() {
     assert_eq!(client.ended(), true);
 }
 
-// #[test]
-// fn test_make_bet() {
-//     let GameTest {
-//         env,
-//         player_a,
-//         player_b,
-//         expiration,
-//         client,
-//     } = GameTest::setup();
-
-//     client.init(&player_a, &player_b, &expiration);
-
-//     let token_admin = Address::random(&env);
-//     let (token_a, token_a_admin) = create_token_contract(&env, &token_admin);
-//     let (_token_b, token_b_admin) = create_token_contract(&env, &token_admin);
-//     token_a_admin.mint(&player_a, &1000);
-//     token_b_admin.mint(&player_b, &1000);
-
-//     assert_eq!(token_a.balance(&player_a), 1000);
-
-//     let mut bet = Bet {
-//         amount: 100,
-//         token: TokenClient::new(env, &env.register_contract(None, Token {})),
-//         paid: false,
-//     };
-
-//     assert_eq!(client.bet(&player_a, &token.contract_id, &100), bet);
-//     assert_eq!(token.balance(&player_a), 900);
-
-//     bet.amount = 200;
-//     assert_eq!(client.bet(&player_a, &token.contract_id, &100), bet);
-//     assert_eq!(token.balance(&player_a), 800);
-
-//     assert_eq!(client.bet(&player_b, &token.contract_id, &200), bet);
-//     assert_eq!(token.balance(&player_b), 800);
-// }
-
-// #[test]
-// #[should_panic]
-// fn test_bet_no_founds() {
-//     let GameTest {
-//         env,
-//         player_a,
-//         player_b,
-//         expiration,
-//         client,
-//     } = GameTest::setup();
-
-//     client.init(&player_a, &player_b, &expiration);
-
-//     let token_admin = Address::random(&env);
-//     let token = create_token_contract(&env, &token_admin);
-
-//     client.bet(&player_a, &token.contract_id, &100);
-// }
-
-// #[test]
-// #[should_panic]
-// fn test_no_bet_no_collect() {
-//     let GameTest {
-//         env: _,
-//         player_a,
-//         player_b,
-//         expiration,
-//         client,
-//     } = GameTest::setup();
-
-//     client.init(&player_a, &player_b, &expiration);
-//     client.clct_bet(&player_a);
-// }
-
-// #[test]
-// #[should_panic]
-// fn test_no_end_no_collect() {
-//     let GameTest {
-//         env,
-//         player_a,
-//         player_b,
-//         expiration,
-//         client,
-//     } = GameTest::setup();
-
-//     client.init(&player_a, &player_b, &expiration);
-
-//     let token_admin = Address::random(&env);
-//     let token = create_token_contract(&env, &token_admin);
-//     token.mint(&token_admin, &player_a, &1000);
-
-//     client.bet(&player_a, &token.contract_id, &100);
-//     client.clct_bet(&player_a);
-// }
-
-// #[test]
-// fn test_collect_own_bet() {
-//     let GameTest {
-//         env,
-//         player_a,
-//         player_b,
-//         expiration,
-//         client,
-//     } = GameTest::setup();
-
-//     client.init(&player_a, &player_b, &expiration);
-
-//     let token_admin = Address::random(&env);
-//     let token = create_token_contract(&env, &token_admin);
-//     token.mint(&token_admin, &player_a, &1000);
-
-//     client.bet(&player_a, &token.contract_id, &100);
-
-//     GameTest::make_player_a_win(&client, &player_a, &player_b);
-
-//     assert_eq!(token.balance(&player_a), 900);
-
-//     let exp_res: Vec<Bet> = Vec::from_array(
-//         &env,
-//         [Bet {
-//             token: token.contract_id.clone(),
-//             amount: 100,
-//             paid: true,
-//         }],
-//     );
-
-//     assert_eq!(client.clct_bet(&player_a), exp_res);
-//     assert_eq!(token.balance(&player_a), 1000);
-// }
-
-// #[test]
-// fn test_collect_opponent_bet() {
-//     let GameTest {
-//         env,
-//         player_a,
-//         player_b,
-//         expiration,
-//         client,
-//     } = GameTest::setup();
-
-//     client.init(&player_a, &player_b, &expiration);
-
-//     let token_admin = Address::random(&env);
-//     let token = create_token_contract(&env, &token_admin);
-//     token.mint(&token_admin, &player_a, &1000);
-//     token.mint(&token_admin, &player_b, &1000);
-
-//     client.bet(&player_a, &token.contract_id, &100);
-//     client.bet(&player_b, &token.contract_id, &100);
-
-//     GameTest::make_player_a_win(&client, &player_a, &player_b);
-
-//     let exp_res: Vec<Bet> = Vec::from_array(
-//         &env,
-//         [
-//             Bet {
-//                 token: token.contract_id.clone(),
-//                 amount: 0,
-//                 paid: true,
-//             },
-//             Bet {
-//                 token: token.contract_id.clone(),
-//                 amount: 200,
-//                 paid: true,
-//             },
-//         ],
-//     );
-
-//     assert_eq!(client.clct_bet(&player_a), exp_res);
-//     assert_eq!(token.balance(&player_a), 1100);
-// }
-
-// #[test]
-// fn test_collect_opponent_bet_lower() {
-//     let GameTest {
-//         env,
-//         player_a,
-//         player_b,
-//         expiration,
-//         client,
-//     } = GameTest::setup();
-
-//     client.init(&player_a, &player_b, &expiration);
-
-//     let token_admin = Address::random(&env);
-//     let token = create_token_contract(&env, &token_admin);
-//     token.mint(&token_admin, &player_a, &1000);
-//     token.mint(&token_admin, &player_b, &1000);
-
-//     client.bet(&player_a, &token.contract_id, &100);
-//     client.bet(&player_b, &token.contract_id, &50);
-
-//     GameTest::make_player_a_win(&client, &player_a, &player_b);
-
-//     let exp_res: Vec<Bet> = Vec::from_array(
-//         &env,
-//         [
-//             Bet {
-//                 token: token.contract_id.clone(),
-//                 amount: 50,
-//                 paid: true,
-//             },
-//             Bet {
-//                 token: token.contract_id.clone(),
-//                 amount: 100,
-//                 paid: true,
-//             },
-//         ],
-//     );
-
-//     assert_eq!(client.clct_bet(&player_a), exp_res);
-//     assert_eq!(token.balance(&player_a), 1050);
-// }
-
-// #[test]
-// fn test_collect_opponent_bet_higher() {
-//     let GameTest {
-//         env,
-//         player_a,
-//         player_b,
-//         expiration,
-//         client,
-//     } = GameTest::setup();
-
-//     client.init(&player_a, &player_b, &expiration);
-
-//     let token_admin = Address::random(&env);
-//     let token = create_token_contract(&env, &token_admin);
-//     token.mint(&token_admin, &player_a, &1000);
-//     token.mint(&token_admin, &player_b, &1000);
-
-//     client.bet(&player_a, &token.contract_id, &100);
-//     client.bet(&player_b, &token.contract_id, &200);
-
-//     GameTest::make_player_a_win(&client, &player_a, &player_b);
-
-//     let exp_res: Vec<Bet> = Vec::from_array(
-//         &env,
-//         [
-//             Bet {
-//                 token: token.contract_id.clone(),
-//                 amount: 0,
-//                 paid: true,
-//             },
-//             Bet {
-//                 token: token.contract_id.clone(),
-//                 amount: 200,
-//                 paid: true,
-//             },
-//         ],
-//     );
-
-//     assert_eq!(client.clct_bet(&player_a), exp_res);
-//     assert_eq!(token.balance(&player_a), 1100);
-// }
-
-// #[test]
-// #[should_panic]
-// fn test_no_collect_twice() {
-//     let GameTest {
-//         env,
-//         player_a,
-//         player_b,
-//         expiration,
-//         client,
-//     } = GameTest::setup();
-
-//     client.init(&player_a, &player_b, &expiration);
-
-//     let token_admin = Address::random(&env);
-//     let token = create_token_contract(&env, &token_admin);
-//     token.mint(&token_admin, &player_a, &1000);
-//     token.mint(&token_admin, &player_b, &1000);
-
-//     client.bet(&player_a, &token.contract_id, &100);
-//     client.bet(&player_b, &token.contract_id, &100);
-
-//     GameTest::make_player_a_win(&client, &player_a, &player_b);
-
-//     client.clct_bet(&player_a);
-//     assert_eq!(token.balance(&player_a), 1100);
-//     client.clct_bet(&player_a);
-// }
-
-// #[test]
-// fn test_empty_chat() {
-//     let GameTest {
-//         env,
-//         player_a,
-//         player_b,
-//         expiration,
-//         client,
-//     } = GameTest::setup();
-
-//     client.init(&player_a, &player_b, &expiration);
-
-//     assert_eq!(client.chat(), vec![&env]);
-// }
-
-// #[test]
-// fn test_send_message() {
-//     let GameTest {
-//         env,
-//         player_a,
-//         player_b,
-//         expiration,
-//         client,
-//     } = GameTest::setup();
-
-//     client.init(&player_a, &player_b, &expiration);
-
-//     let msg = Message {
-//         author: player_a,
-//         body: Symbol::short("Hello"),
-//     };
-//     client.send_msg(&msg.author, &msg.body);
-
-//     assert_eq!(client.chat(), vec![&env, msg]);
-// }
-
-// #[test]
-// fn test_send_messages() {
-//     let GameTest {
-//         env,
-//         player_a,
-//         player_b,
-//         expiration,
-//         client,
-//     } = GameTest::setup();
-
-//     client.init(&player_a, &player_b, &expiration);
-
-//     let msg = Message {
-//         author: player_a,
-//         body: Symbol::short("Hello"),
-//     };
-//     client.send_msg(&msg.author, &msg.body);
-
-//     let msg2 = Message {
-//         author: player_b,
-//         body: Symbol::short("No"),
-//     };
-//     client.send_msg(&msg2.author, &msg2.body);
-
-//     assert_eq!(client.chat(), vec![&env, msg, msg2]);
-// }
+#[test]
+fn test_empty_chat() {
+    let GameTest {
+        env,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
+
+    client.init(&player_a, &player_b, &expiration);
+
+    assert_eq!(client.chat(), vec![&env]);
+}
+
+#[test]
+fn test_send_message() {
+    let GameTest {
+        env,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
+
+    client.init(&player_a, &player_b, &expiration);
+
+    let msg = Message {
+        author: player_a,
+        body: symbol_short!("Hello"),
+    };
+    client.send_msg(&msg.author, &msg.body);
+
+    assert_eq!(client.chat(), vec![&env, msg]);
+}
+
+#[test]
+fn test_send_messages() {
+    let GameTest {
+        env,
+        player_a,
+        player_b,
+        expiration,
+        client,
+    } = GameTest::setup();
+
+    client.init(&player_a, &player_b, &expiration);
+
+    let msg = Message {
+        author: player_a,
+        body: symbol_short!("Hello"),
+    };
+    client.send_msg(&msg.author, &msg.body);
+
+    let msg2 = Message {
+        author: player_b,
+        body: symbol_short!("No"),
+    };
+    client.send_msg(&msg2.author, &msg2.body);
+
+    assert_eq!(client.chat(), vec![&env, msg, msg2]);
+}
